@@ -210,7 +210,7 @@ namespace OutlookGoogleCalendarSync {
         [DataMember] public bool? HideSplashScreen {
             get { return hideSplashScreen; }
             set {
-                if (!Loading() && hideSplashScreen != value) {
+                if (!Loading() && hideSplashScreen != value && hideSplashScreen != null) {
                     XMLManager.ExportElement(this, "HideSplashScreen", value, ConfigFile);
                 }
                 hideSplashScreen = value;
@@ -499,7 +499,7 @@ namespace OutlookGoogleCalendarSync {
             public static SettingsStore.Calendar InPlay() {
                 SettingsStore.Calendar aProfile;
 
-                if (Program.CalledByProcess("manualSynchronize,Sync_Click,updateGUIsettings,UpdateGUIsettings_Profile,miCatRefresh_Click," +
+                if (Program.CalledByProcess("manualSynchronize,Sync_Click,Save_Click,updateGUIsettings,UpdateGUIsettings_Profile,miCatRefresh_Click," +
                     "GetMyGoogleCalendars_Click,btColourMap_Click,btTestOutlookFilter_Click,ColourPicker_Enter,OnSelectedIndexChanged,OnCheckedChanged")) {
                     aProfile = Forms.Main.Instance.ActiveCalendarProfile;
                     log.Fine("Using profile Forms.Main.Instance.ActiveCalendarProfile");
