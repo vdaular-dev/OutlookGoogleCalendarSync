@@ -1935,7 +1935,15 @@ namespace OutlookGoogleCalendarSync.Forms {
                             this.cbColour.Checked = false;
                         break;
                     }
+                case "target calendar": {
+                        ActiveCalendarProfile.TargetCalendar = Sync.Direction.Bidirectional;
+                        this.ddGoogleColour.Visible = false;
+                        this.ddOutlookColour.Visible = true;
+                        if (Outlook.Factory.OutlookVersionName == Outlook.Factory.OutlookVersionNames.Outlook2003)
+                            this.cbColour.Checked = false;
+                        break;
                     }
+            }
             buildAvailabilityDropdown();
         }
 
