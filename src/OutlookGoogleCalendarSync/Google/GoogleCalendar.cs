@@ -1938,7 +1938,6 @@ namespace OutlookGoogleCalendarSync.Google {
         /// </summary>
         /// <param name="oSensitivity">Outlook's current setting</param>
         /// <param name="gVisibility">Google's current setting</param>
-        /// <param name="direction">Direction of sync</param>
         private String getPrivacy(OlSensitivity oSensitivity, String gVisibility) {
             SettingsStore.Calendar profile = Sync.Engine.Calendar.Instance.Profile;
 
@@ -1946,19 +1945,17 @@ namespace OutlookGoogleCalendarSync.Google {
                 return (oSensitivity == OlSensitivity.olNormal) ? "default" : "private";
 
             String overridePrivacy = "public";
-            try {
-                Enum.TryParse(profile.PrivacyLevel,  out OlSensitivity olOverridePrivacy);
-                overridePrivacy = olOverridePrivacy == OlSensitivity.olPrivate ? "private" : "public";
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.PrivacyLevel + "' to OlSensitivity type. Defaulting override to normal.");
-            }
-
+            OlSensitivity olOverridePrivacy = OlSensitivity.olNormal;
+            if (!Enum.TryParse(profile.PrivacyLevel, out olOverridePrivacy))
+                log.Error("Could not convert string '" + profile.PrivacyLevel + "' to OlSensitivity type. Defaulting override to normal.");
+            overridePrivacy = olOverridePrivacy == OlSensitivity.olPrivate ? "private" : "public";
+            
             if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Privacy enforcement is in other direction
                 if (gVisibility == null)
                     return (oSensitivity == OlSensitivity.olNormal) ? "default" : "private";
-                else if (gVisibility == "private" && oSensitivity != OlSensitivity.olPrivate) {
-                    log.Fine("Source of truth for privacy is already set private and target is NOT - so syncing this back.");
-                    return "default";
+                else if (!profile.CreatedItemsOnly && (overridePrivacy == gVisibility && oSensitivity != olOverridePrivacy)) {
+                    log.Warn("Outlook privacy override has been manually altered - so syncing this back.");
+                    return (oSensitivity == OlSensitivity.olNormal) ? "default" : "private";
                 } else
                     return gVisibility;
             } else {
@@ -1984,22 +1981,22 @@ namespace OutlookGoogleCalendarSync.Google {
 
             String overrideTransparency = "opaque";
             OlBusyStatus fbStatus = OlBusyStatus.olBusy;
-            try {
-                Enum.TryParse(profile.AvailabilityStatus, out fbStatus);
-                if (fbStatus == OlBusyStatus.olFree)
-                    overrideTransparency = "transparent";
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.AvailabilityStatus + "' to OlBusyStatus type. Defaulting override to busy.");
-            }
+            if (!Enum.TryParse(profile.AvailabilityStatus, out fbStatus))
+                log.Error("Could not convert string '" + profile.AvailabilityStatus + "' to OlBusyStatus type. Defaulting override to busy.");
+            if (fbStatus == OlBusyStatus.olFree)
+                overrideTransparency = "transparent";
 
-                if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Availability enforcement is in other direction
-                    if (gTransparency == null)
-                        return (oBusyStatus == OlBusyStatus.olFree) ? "transparent" : "opaque";
-                    else
-                        return gTransparency;
-                } else {
-                    if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gTransparency == null))
-                        return overrideTransparency;
+            if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Availability enforcement is in other direction
+                if (gTransparency == null)
+                    return (oBusyStatus == OlBusyStatus.olFree) ? "transparent" : "opaque";
+                else if (!profile.CreatedItemsOnly && (overrideTransparency == gTransparency && oBusyStatus != fbStatus)) {
+                    log.Warn("Outlook privacy override has been manually altered - so syncing this back.");
+                    return (oBusyStatus == OlBusyStatus.olFree) ? "transparent" : "opaque";
+                } else
+                    return gTransparency;
+            } else {
+                if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gTransparency == null))
+                    return overrideTransparency;
                 else {
                     if (profile.CreatedItemsOnly) return gTransparency;
                     else return overrideTransparency;

@@ -1057,16 +1057,16 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
 
             OlSensitivity overrideSensitivity = OlSensitivity.olNormal;
-            try {
-                Enum.TryParse(profile.PrivacyLevel, out overrideSensitivity);
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.PrivacyLevel + "' to OlSensitivity type. Defaulting override to normal.");
-            }
+            if (!Enum.TryParse(profile.PrivacyLevel, out overrideSensitivity))
+                log.Error("Could not convert string '" + profile.PrivacyLevel + "' to OlSensitivity type. Defaulting override to normal.");
 
             if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Privacy enforcement is in other direction
                 if (oSensitivity == null)
                     return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
-                else
+                else if (!profile.CreatedItemsOnly && (overrideSensitivity == oSensitivity && gVisibility != ((overrideSensitivity == OlSensitivity.olNormal) ? "public" : "private"))) {
+                    log.Warn("Google privacy override has been manually altered - so syncing this back.");
+                    return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
+                } else
                     return (OlSensitivity)oSensitivity;
             } else {
                 if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oSensitivity == null))
@@ -1092,16 +1092,16 @@ namespace OutlookGoogleCalendarSync.Outlook {
                     persistOutlookStatus.Contains(oBusyStatus.ToString()) ? (OlBusyStatus)oBusyStatus : OlBusyStatus.olBusy;
 
             OlBusyStatus overrideFbStatus = OlBusyStatus.olBusy;
-            try {
-                Enum.TryParse(profile.AvailabilityStatus, out overrideFbStatus);
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.AvailabilityStatus + "' to OlBusyStatus type. Defaulting override to busy.");
-            }
-
+            if (!Enum.TryParse(profile.AvailabilityStatus, out overrideFbStatus))
+                log.Error("Could not convert string '" + profile.AvailabilityStatus + "' to OlBusyStatus type. Defaulting override to busy.");
+            
             if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Availability enforcement is in other direction
                 if (oBusyStatus == null)
                     return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
-                else
+                else if (!profile.CreatedItemsOnly && (overrideFbStatus == oBusyStatus && gTransparency != ((overrideFbStatus == OlBusyStatus.olFree) ? "transparent" : "opaque"))) {
+                    log.Warn("Google availability override has been manually altered - so syncing this back.");
+                    return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
+                } else
                     return (OlBusyStatus)oBusyStatus;
             } else {
                 if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oBusyStatus == null))
