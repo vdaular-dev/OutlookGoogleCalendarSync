@@ -1024,7 +1024,11 @@ namespace OutlookGoogleCalendarSync.Google {
             }
 
             if (profile.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) {
-                if (ai.Recipients.Count > profile.MaxAttendees) {
+                if (!(ev.Organizer.Self ?? false)) {
+                    log.Debug("The organiser of the Google event is someone else; won't meddle with attendees.");
+                    //Attendee properties cannot be updated anyway, only attendees added, which is most likely unintended behaviour (eg due to cloaking).
+
+                } else if (ai.Recipients.Count > profile.MaxAttendees) {
                     log.Warn("This Outlook appointment has " + ai.Recipients.Count + " attendees, more than the user configured maximum.");
                     if (ai.Recipients.Count >= 200) {
                         Forms.Main.Instance.Console.Update(aiSummary + "<br/>Attendees will not be synced for this meeting as it has " +
@@ -1791,7 +1795,7 @@ namespace OutlookGoogleCalendarSync.Google {
                             }
 
                             //Response
-                            if (attendeeIdentifier == Settings.Instance.GaccountEmail) {
+                            if (attendee.Self ?? false) {
                                 log.Fine("The Outlook attendee is the Google organiser, therefore not touching response status.");
                                 break;
                             } else if (ai.Organizer == attendeeIdentifier) {
