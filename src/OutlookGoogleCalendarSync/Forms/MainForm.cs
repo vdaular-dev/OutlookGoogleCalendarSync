@@ -194,7 +194,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             } else {
                 ddProfile.Items.AddRange(Settings.Instance.Calendars.Select(c => c._ProfileName).ToArray());
             }
-            ddProfile.SelectedIndex = 0;
+            ddProfile.SelectedIndex = ddProfile.Items.Count == 0 ? -1 : 0;
             #endregion
 
             #region Sync

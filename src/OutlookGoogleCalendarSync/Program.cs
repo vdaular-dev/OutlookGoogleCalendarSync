@@ -112,7 +112,9 @@ namespace OutlookGoogleCalendarSync {
             } catch (System.Exception ex) {
                 Ogcs.Exception.Analyse(ex, true);
                 log.Fatal("Application unexpectedly terminated!");
-                Ogcs.Extensions.MessageBox.Show(ex.Message, "Application unexpectedly terminated!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (Settings.InstanceInitialiased)
+                    Settings.Instance.Calendars?.ForEach(cal => { cal.OgcsPushTimer?.Stop(); cal.OgcsTimer?.Stop(); });
+                MessageBox.Show(ex.Message, "Application unexpectedly terminated!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 log.Warn("OGCS has crashed out.");
 
             } finally {
