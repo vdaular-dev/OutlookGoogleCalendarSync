@@ -63,7 +63,7 @@ namespace OutlookGoogleCalendarSync {
         }
 
         private void Animator_Tick(object sender, EventArgs e) {
-            if (animatedIconFrames == null) {
+            if (animatedIconFrames == null || this.icon?.Icon == null) {
                 IconAnimator.Stop();
                 return;
             }
