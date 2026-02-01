@@ -239,9 +239,23 @@ namespace OutlookGoogleCalendarSync.Outlook {
                                     ExcludedByCategory.Add(ai.EntryID, CustomProperty.Get(ai, CustomProperty.MetadataId.gEventID)); continue;
                                 } catch (System.ArgumentException ex) {
                                     if (ex.Message == "An item with the same key has already been added.") {
-                                        log.Warn("Investigating issue #2233 and duplicate EntryID...");
+                                        ex.Analyse("Investigating issue #2233 and duplicate EntryID...", true);
                                         try {
+                                            log.Debug("Errored item: " + ai.EntryID);
+                                            log.Debug(GetEventSummary(ai));
+                                            log.Debug("ExcludedByCategory.Count: "+ ExcludedByCategory.Count);
+                                            log.Debug("ExcludedByCategory.ContainsKey: " + ExcludedByCategory.ContainsKey(ai.EntryID));
                                             List<AppointmentItem> ais = new();
+                                            IOutlook.FilterItems(OutlookItems, filter)
+                                                .FindAll(x => (x as AppointmentItem).EntryID == ai.EntryID)
+                                                .ForEach(y => ais.Add(y as AppointmentItem));
+                                            log.Debug("Simple search found: " + ais.Count);
+                                            ais.ForEach(x => {
+                                                log.Debug("   -> " + x.GlobalAppointmentID);
+                                                log.Debug("      " + GetEventSummary(x));
+                                            });
+                                            
+                                            ais = new();
                                             IOutlook.FilterItems(OutlookItems, filter).ForEach(ai => ais.Add(ai as AppointmentItem));
                                             ExportToCSV("Appointments containing possible duplicate EntryID", "outlook_appointments_duplicateEntryID.csv", ais);
 
