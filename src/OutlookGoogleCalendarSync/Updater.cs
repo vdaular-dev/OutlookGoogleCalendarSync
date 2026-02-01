@@ -38,7 +38,7 @@ namespace OutlookGoogleCalendarSync {
             if (isManualCheck) updateButton.Text = "Checking...";
 
             try {
-                if (Program.VersionToInt(Application.ProductVersion) > 3000002) {
+                if (Program.VersionToInt(Application.ProductVersion) >= 4000001) {
                     devBuildChecker();
                 
                 } else if (!string.IsNullOrEmpty(nonGitHubReleaseUri) || Program.IsInstalled) {
@@ -627,6 +627,8 @@ namespace OutlookGoogleCalendarSync {
         #endregion
 
         #region Development Build
+        // This section is specifically checking for a bleeding edge development build.
+        // Originally for early v3 builds, published on discussion #1888
         private void devBuildChecker() {
             BackgroundWorker bwUpdater = new BackgroundWorker {
                 WorkerReportsProgress = false,
@@ -658,7 +660,8 @@ namespace OutlookGoogleCalendarSync {
 
             if (!string.IsNullOrEmpty(html)) {
                 log.Debug($"Finding {releaseType} release...");
-                MatchCollection release = getRelease(html, @"<a href=""(.*?)"" id=""user-content-latestbuild"">(?<version>[\d\.]+)<\/a>");
+                Regex rgx = new Regex(@"<a href=""(.*?)"" id=""user-content-latestbuild"">(?<version>[\d\.]+)<\/a>", RegexOptions.IgnoreCase);
+                MatchCollection release = rgx.Matches(html);
                 if (release.Count > 0)
                     releaseVersion = release[0].Groups["version"].Value;
             }
