@@ -63,11 +63,14 @@ namespace OutlookGoogleCalendarSync {
                 }
 
             } catch (ApplicationException ex) {
-                log.Error(ex.Message + " " + ex.InnerException.Message);
-                if (Ogcs.Extensions.MessageBox.Show("The upgrade failed.\nWould you like to get the latest version from the project website manually?", "Upgrade Failed", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes) {
-                    Helper.OpenBrowser(Program.OgcsWebsite);
+                if (ex.Message.Contains("Please try updating again")) {
+                    Ogcs.Extensions.MessageBox.Show(ex.Message, "Upgrade Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                } else {
+                    log.Error(ex.Message + " " + ex.InnerException?.Message);
+                    if (Ogcs.Extensions.MessageBox.Show("The upgrade failed.\nWould you like to get the latest version from the project website manually?", "Upgrade Failed", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes) {
+                        Helper.OpenBrowser(Program.OgcsWebsite);
+                    }
                 }
-
             } catch (System.Exception ex) {
                 log.Fail("Failure checking for update. " + ex.Message);
                 if (isManualCheck) {
@@ -170,7 +173,7 @@ namespace OutlookGoogleCalendarSync {
 
                         String localFile = updates.PackageDirectory + "\\" + update.Filename;
                         if (updateManager.CheckIfAlreadyDownloaded(update, localFile)) {
-                            log.Debug("This has already been downloaded.");
+                            log.Debug("This file has already been downloaded: "+ localFile);
                         } else {
                             squirrelGaEv.AddParameter(GA4.Squirrel.state, "Upgrade downloading");
                             squirrelGaEv.AddParameter(GA4.Squirrel.file, update.Filename);
@@ -263,6 +266,17 @@ namespace OutlookGoogleCalendarSync {
                                             new Extensions.OgcsWebClient().DownloadFile(nupkgUrl, updates.PackageDirectory + "\\" + match.Groups[1]);
                                             log.Debug("Download complete.");
                                         }
+                                    } else throw;
+                                } catch (System.ComponentModel.Win32Exception ex) {
+                                    if (ex.GetErrorCode() == "0x80004005") { //"The system cannot find the file specified" in ApplyDelta()
+                                        log.Warn("Downloaded update file(s) appear corrupted. Clearing out the cache:-");
+                                        foreach (String file in Directory.GetFiles(updates.PackageDirectory, "*.nupkg")) {
+                                            File.Delete(file);
+                                            log.Warn("  Deleted " + file);
+                                        }
+                                        File.Delete("RELEASES");
+                                        throw new ApplicationException("Downloaded update files appear corrupted.\r\n"+
+                                            "Please try updating again by clicking 'Check for Update' on the 'About' tab.", ex);
                                     } else throw;
                                 }
                             }
