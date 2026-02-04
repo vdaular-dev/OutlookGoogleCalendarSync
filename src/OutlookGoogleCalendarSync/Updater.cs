@@ -123,11 +123,15 @@ namespace OutlookGoogleCalendarSync {
                     }
                     throw;
                 }
+
                 if ((Settings.Instance.AlphaReleases && updates.ReleasesToApply.Any()) ||
                     updates.ReleasesToApply.Any(r => r.Version.SpecialVersion != "alpha")) {
-                    
-                    if (updates.CurrentlyInstalledVersion != null)
+
+                    if (updates.CurrentlyInstalledVersion != null) {
                         log.Info("Currently installed version: " + updates.CurrentlyInstalledVersion.Version.ToString());
+                        if (detectedUpgradeToSelf(updates)) return false;
+                    }
+
                     log.Info("Found " + updates.ReleasesToApply.Count() + " newer releases available.");
                     log.Info("Download directory = " + updates.PackageDirectory);
 
@@ -346,6 +350,30 @@ namespace OutlookGoogleCalendarSync {
                 isBusy = false;
                 updateInfoFrm?.Dispose();
                 updateManager?.Dispose();
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// If the RELEASES file is empty, false 'upgrades' to the same version as current occur
+        /// </summary>
+        /// <param name="updates">The updates available</param>
+        /// <returns>True if the only upgrade is to the current version</returns>
+        private Boolean detectedUpgradeToSelf(UpdateInfo updates) {
+            if (updates.ReleasesToApply.Count == 1 && updates.CurrentlyInstalledVersion.Version == updates.FutureReleaseEntry.Version) {
+                log.Warn("Upgrade detected is for the same version as current. Checking the RELEASES file content...");
+                String releasesFile = Path.Combine(updates.PackageDirectory, "RELEASES");
+                String releasesContent = File.ReadAllText(releasesFile);
+                if (string.IsNullOrEmpty(releasesContent.Trim())) {
+                    log.Warn("The RELEASES file is empty! Repopulating.");
+                    File.WriteAllText(releasesFile, updates.FutureReleaseEntry.EntryAsString);
+                } else {
+                    log.Debug("RELEASES file has the following content:-\\n" + releasesContent);
+                    log.Error("New version detected is same as current.");
+                }
+                if (this.isManualCheck)
+                    Ogcs.Extensions.MessageBox.Show("You are already running the latest version of OGCS.", "Latest Version", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return true;
             }
             return false;
         }
