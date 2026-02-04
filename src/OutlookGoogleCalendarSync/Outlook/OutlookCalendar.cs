@@ -668,7 +668,9 @@ namespace OutlookGoogleCalendarSync.Outlook {
                         String evBodyForCompare = bodyObfuscated;
                         switch (ai.BodyFormat()) {
                             case OlBodyFormat.olFormatHTML:
-                                evBodyForCompare = Regex.Replace(bodyObfuscated, "[\n]+", " ").Trim(); break;
+                                evBodyForCompare = Regex.Replace(bodyObfuscated, @"\s*[\n]+", " ");
+                                evBodyForCompare = System.Net.WebUtility.HtmlDecode(evBodyForCompare).Trim();
+                                break;
                             case OlBodyFormat.olFormatRichText:
                                 evBodyForCompare = Regex.Replace(bodyObfuscated, "[\n]", ""); break;
                             case OlBodyFormat.olFormatPlain:
