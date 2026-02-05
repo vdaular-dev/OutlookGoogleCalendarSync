@@ -36,7 +36,7 @@ namespace OutlookGoogleCalendarSync {
             bt = updateButton;
             log.Debug((isManualCheck ? "Manual" : "Automatic") + " update check requested.");
             if (isManualCheck) updateButton.Text = "Checking...";
-            
+
             try {
                 if (!string.IsNullOrEmpty(nonGitHubReleaseUri) || Program.IsInstalled) {
                     try {
@@ -45,15 +45,9 @@ namespace OutlookGoogleCalendarSync {
                             try {
                                 System.Diagnostics.Process.Start(restartUpdateExe, "--processStartAndWait OutlookGoogleCalendarSync.exe");
                             } catch (System.Exception ex) {
-                               Ogcs.Exception.Analyse(ex, true);
+                                Ogcs.Exception.Analyse(ex, true);
                             }
-                            try {
-                               Forms.Main.Instance.NotificationTray.ExitItem_Click(null, null);
-                            } catch (System.Exception ex) {
-                                log.Error("Failed to exit via the notification tray icon. " + ex.Message);
-                                log.Debug("NotificationTray is " + (Forms.Main.Instance.NotificationTray == null ? "null" : "not null"));
-                                Environment.Exit(Environment.ExitCode);
-                            }
+                            Program.Shutdown();
                         }
                     } finally {
                         if (isManualCheck) updateButton.Text = "Check For Update";
@@ -63,14 +57,14 @@ namespace OutlookGoogleCalendarSync {
                 }
 
             } catch (ApplicationException ex) {
-                if (ex.Message.Contains("Please try updating again")) {
-                    Ogcs.Extensions.MessageBox.Show(ex.Message, "Upgrade Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                } else {
-                    log.Error(ex.Message + " " + ex.InnerException?.Message);
-                    if (Ogcs.Extensions.MessageBox.Show("The upgrade failed.\nWould you like to get the latest version from the project website manually?", "Upgrade Failed", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes) {
-                        Helper.OpenBrowser(Program.OgcsWebsite);
-                    }
+                log.Error(ex.Message + " " + ex.InnerException?.Message);
+                if (Ogcs.Extensions.MessageBox.Show("The upgrade failed.\nWould you like to get the latest version from the project website manually?", "Upgrade Failed", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.Yes) {
+                    Helper.OpenBrowser(Program.OgcsWebsite);
                 }
+
+            } catch (BadImageFormatException ex) {
+                Ogcs.Extensions.MessageBox.Show(ex.Message, "Upgrade Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                
             } catch (System.Exception ex) {
                 log.Fail("Failure checking for update. " + ex.Message);
                 if (isManualCheck) {
@@ -128,7 +122,7 @@ namespace OutlookGoogleCalendarSync {
                     updates.ReleasesToApply.Any(r => r.Version.SpecialVersion != "alpha")) {
 
                     if (updates.CurrentlyInstalledVersion != null) {
-                        log.Info("Currently installed version: " + updates.CurrentlyInstalledVersion.Version.ToString());
+                        log.Info("Currently installed version: " + Program.MaskFilePath(updates.CurrentlyInstalledVersion.Version.ToString()));
                         if (detectedUpgradeToSelf(updates)) return false;
                     }
 
@@ -177,7 +171,7 @@ namespace OutlookGoogleCalendarSync {
 
                         String localFile = updates.PackageDirectory + "\\" + update.Filename;
                         if (updateManager.CheckIfAlreadyDownloaded(update, localFile)) {
-                            log.Debug("This file has already been downloaded: "+ localFile);
+                            log.Debug("This file has already been downloaded: "+ Program.MaskFilePath(localFile));
                         } else {
                             squirrelGaEv.AddParameter(GA4.Squirrel.state, "Upgrade downloading");
                             squirrelGaEv.AddParameter(GA4.Squirrel.file, update.Filename);
@@ -255,32 +249,40 @@ namespace OutlookGoogleCalendarSync {
                                 try {
                                     await updateManager.ApplyReleases(updates, updateInfoFrm.ShowUpgradeProgress);
                                     break;
-                                } catch (System.AggregateException ex) {
-                                    ApplyAttempt++;
-                                    if (ex.InnerException.GetErrorCode() == "0x80070057") { //File does not exist
-                                        //File does not exist: C:\Users\Paul\AppData\Local\OutlookGoogleCalendarSync\packages\OutlookGoogleCalendarSync-2.8.4-alpha-full.nupkg
-                                        //Extract the nupkg filename
-                                        String regexMatch = ".*" + updates.PackageDirectory.Replace(@"\", @"\\") + @"\\(.*?([\d\.]+-\w+).*)$";
-                                        Match match = Regex.Match(ex.InnerException.Message, regexMatch);
-
-                                        if (match?.Groups?.Count == 3) {
-                                            log.Warn("Could not update due to missing file " + match.Groups[1]);
-                                            String nupkgUrl = "https://github.com/phw198/OutlookGoogleCalendarSync/releases/download/v" + match.Groups[2] + "/" + match.Groups[1];
-                                            log.Debug("Downloading " + nupkgUrl);
-                                            new Extensions.OgcsWebClient().DownloadFile(nupkgUrl, updates.PackageDirectory + "\\" + match.Groups[1]);
-                                            log.Debug("Download complete.");
-                                        }
-                                    } else throw;
+                                
                                 } catch (System.ComponentModel.Win32Exception ex) {
                                     if (ex.GetErrorCode() == "0x80004005") { //"The system cannot find the file specified" in ApplyDelta()
-                                        log.Warn("Downloaded update file(s) appear corrupted. Clearing out the cache:-");
-                                        foreach (String file in Directory.GetFiles(updates.PackageDirectory, "*.nupkg")) {
-                                            File.Delete(file);
-                                            log.Warn("  Deleted " + file);
-                                        }
-                                        File.Delete("RELEASES");
-                                        throw new ApplicationException("Downloaded update files appear corrupted.\r\n"+
+                                        log.Warn("The base nupkg file CRC is not matching and cannot be used for delta update.");
+                                        removeCachedPackages(updates.PackageDirectory);
+                                        throw new BadImageFormatException("Downloaded update files appear corrupted.\r\n" +
                                             "Please try updating again by clicking 'Check for Update' on the 'About' tab.", ex);
+                                    } else throw;
+
+                                } catch (System.Exception ex) {
+                                    ApplyAttempt++;
+                                    if (ex is System.AggregateException && ex.InnerException != null) ex = ex.InnerException;
+                                    if (ex is System.ArgumentException && ex.GetErrorCode() == "0x80070057") { //File does not exist
+                                        //File does not exist: C:\Users\Paul\AppData\Local\OutlookGoogleCalendarSync\packages\OutlookGoogleCalendarSync-2.8.4-alpha-full.nupkg
+                                        log.Debug($"Contents of directory {Program.MaskFilePath(updates.PackageDirectory)}:-");
+                                        foreach (String file in Directory.GetFiles(updates.PackageDirectory)) {
+                                            log.Debug("  " + Path.GetFileName(file));
+                                        }
+                                        //Extract the nupkg filename
+                                        String regexMatch = @".*\\(?<filename>.*?(?<release>[\d\.]+-\w+).*)$";
+                                        Match match = Regex.Match(ex.Message, regexMatch);
+                                        if (match?.Groups?.Count == 3) {
+                                            log.Warn("Could not update due to missing file " + match.Groups["filename"]);
+                                            if (!match.Groups["filename"].Value.EndsWith("-full.nupkg") && !match.Groups["filename"].Value.EndsWith("-delta.nupkg")) {
+                                                log.Warn("The base nupkg file is not available.");
+                                                removeCachedPackages(updates.PackageDirectory);
+                                                throw new System.BadImageFormatException("Downloaded update files appear corrupted.\r\n" +
+                                                    "Please try updating again by clicking 'Check for Update' on the 'About' tab.", ex);
+                                            }
+                                            String nupkgUrl = "https://github.com/phw198/OutlookGoogleCalendarSync/releases/download/v" + match.Groups["release"] + "/" + match.Groups["filename"]; ;
+                                            log.Debug("Downloading " + nupkgUrl);
+                                            new Extensions.OgcsWebClient().DownloadFile(nupkgUrl, updates.PackageDirectory + "\\" + match.Groups["filename"]);
+                                            log.Debug("Download complete.");
+                                        } else throw;
                                     } else throw;
                                 }
                             }
@@ -376,6 +378,18 @@ namespace OutlookGoogleCalendarSync {
                 return true;
             }
             return false;
+        }
+
+        private void removeCachedPackages(String dir) {
+            log.Info("Clearing out the cache:-");
+            foreach (String file in Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly)) {
+                try {
+                    File.Delete(file);
+                    log.Warn("  Deleted " + Path.GetFileName(file));
+                } catch (System.Exception ex) {
+                    ex.Analyse($"Could not delete {Program.MaskFilePath(file)}");
+                }
+            }
         }
 
         #region Squirrel Bits
