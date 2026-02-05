@@ -114,6 +114,8 @@ namespace OutlookGoogleCalendarSync {
             } catch (System.Exception ex) {
                 Ogcs.Exception.Analyse(ex, true);
                 log.Fatal("Application unexpectedly terminated!");
+                if (Settings.InstanceInitialiased)
+                    Settings.Instance.Calendars?.ForEach(cal => { cal.OgcsPushTimer?.Stop(); cal.OgcsTimer?.Stop(); });
                 MessageBox.Show(ex.Message, "Application unexpectedly terminated!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 log.Warn("OGCS has crashed out.");
 
@@ -525,8 +527,7 @@ namespace OutlookGoogleCalendarSync {
                 } else { //Release notes not updated for hotfixes.
                     String releaseNotesUrl = "/release-notes.html";
                     if (!String.IsNullOrEmpty(Settings.Instance.GaccountEmail)) {
-                        byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(Settings.Instance.GaccountEmail);
-                        releaseNotesUrl += "?id=" + System.Convert.ToBase64String(plainTextBytes);
+                        releaseNotesUrl += "?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail);
                     }
                     Helper.OpenBrowser(OgcsWebsite + releaseNotesUrl);
                     if (isSquirrelInstall) {
@@ -583,7 +584,7 @@ namespace OutlookGoogleCalendarSync {
                     .Send();
 
             } finally {
-                Helper.OpenBrowser("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=44DUQ7UT6WE2C&item_name=Outlook Google Calendar Sync from " + Settings.Instance.GaccountEmail);
+                Helper.OpenBrowser(OgcsWebsite + "/donate?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail));
             }
         }
 
