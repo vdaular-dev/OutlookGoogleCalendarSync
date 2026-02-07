@@ -27,7 +27,8 @@ namespace OutlookGoogleCalendarSync {
 
             if (ex is Microsoft.Graph.ServiceException) {
                 Microsoft.Graph.ServiceException gex = ex as Microsoft.Graph.ServiceException;
-                log.ErrorOrFail("Code: " + gex.Error.Code + "; Message: " + gex.Error.Message, logLevel);
+                log.Debug(Newtonsoft.Json.JsonConvert.SerializeObject(gex.Error));
+                log.ErrorOrFail("StatusCode: " + gex.StatusCode + "; Code: " + gex.Error.Code + "; Message: " + gex.Error.Message, logLevel);
                 return;
             } else
                 log.ErrorOrFail(ex.GetType().FullName + ": " + ex.Message, logLevel);
@@ -198,6 +199,14 @@ namespace OutlookGoogleCalendarSync {
 
         /// <summary>Capture this exception as log4net FAIL (not ERROR) when logged</summary>
         public static void LogAsFail(ref global::Google.GoogleApiException ex) {
+            if (ex.Data.Contains(LogAs))
+                ex.Data[LogAs] = Ogcs.Exception.LogLevel.FAIL;
+            else
+                ex.Data.Add(LogAs, Ogcs.Exception.LogLevel.FAIL);
+        }
+
+        /// <summary>Capture this exception as log4net FAIL (not ERROR) when logged</summary>
+        public static void LogAsFail(ref System.Net.WebException ex) {
             if (ex.Data.Contains(LogAs))
                 ex.Data[LogAs] = Ogcs.Exception.LogLevel.FAIL;
             else

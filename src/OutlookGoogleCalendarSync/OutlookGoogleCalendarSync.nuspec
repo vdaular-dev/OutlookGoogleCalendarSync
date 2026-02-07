@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>OutlookGoogleCalendarSync</id>
-    <version>2.11.5-alpha</version>
+    <version>2.11.7-alpha</version>
     <title>Outlook Google Calendar Sync</title>
     <authors>Paul Woolcock</authors>
     <owners>phw198</owners>
@@ -12,25 +12,26 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Sync Outlook and Google calendars.</description>
     <releaseNotes>
-# What's New In v2.11.5?
+# What's New In v2.11.7?
 
 &lt;i class="em em-high_brightness"&gt;&lt;/i&gt; **Enhancements**  
 
 - Application
-    - Better detection of system wake from sleep [[#2132](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2132)]
-    - Migrated news alert service to Google CloudRun for scalability
-    - Prepared ability to receive v2 update alerts when skipping v3 releases
-- Sync Engine
-    - Miscellenous logging improvements
+    - Validation on browser user agent; always editable [[#2195](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2195)]
+    - Log time zone information when a change is detected [[#2233](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2233)]
+    - Workaround Google cloud logging losing data that includes FAIL events
+    - Provision for automatic upgrades to OGCS v2 releases, once v3 is available
 
 &lt;i class="em em-beetle"&gt;&lt;/i&gt; **Bugfix**  
 
 - Application
-    - Fixed regression for "startup in tray" setting [[#2117](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2117)]
+    - Cleaner startup when no classic Outlook client present
+    - Fixed error when attempting to skip a release [[#2192](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2192)]
+    - Fixed error after resetting Google connection [[#2234](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2234)]
 - Sync Engine
-    - Workaround for Google bug that surfaced on 23-May with symptoms:
-        - New Outlook appointment from "ghost" Google event fails to save [[#2123](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2123)]
-        - Repeated failure to delete "ghost" Google event(s) [[#2124](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2124)]
+    - Properly initialise sync timer after Profile import [[#2177](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2177)]
+    - Force reconnect to Outlook when calendar items become unavailable [[#2185](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2185)]
+    - Improved storage of last modified timestamp [[#2238](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2238)]
     </releaseNotes>
     <copyright>Copyright 2025</copyright>
     <tags>Outlook Google Calendar Sync 2-way Two-way Bidirection</tags>

@@ -108,6 +108,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                             } else {
                                 log.Info("User opted to retry sync straight away.");
                                 mainFrm.Console.Clear();
+                                if (Outlook.Calendar.ForceClientReconnect) Outlook.Calendar.Instance.Reset();
                                 Sync.Engine.Instance.bwSync = new AbortableBackgroundWorker() {
                                     //Don't need thread to report back. The logbox is updated from the thread anyway.
                                     WorkerReportsProgress = false,
@@ -216,8 +217,8 @@ namespace OutlookGoogleCalendarSync.Sync {
                         log.Info(duration);
                         String syncStats = $"<div style='color: grey; font-size: 11px'>{duration}<br/>Syncs completed: {Settings.Instance.CompletedSyncs}";
                         if (!Settings.Instance.UserIsBenefactor()) {
-                            syncStats += $"<br/><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=44DUQ7UT6WE2C&item_name=Outlook Google Calendar Sync from " +
-                                Settings.Instance.GaccountEmail + "' onClick='javascript:mp(donateEvent)' style='color: grey'>Donate</a></font>";
+                            syncStats += $"<br/><a href='{Program.OgcsWebsite}/donate?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail) + 
+                                "' onClick='javascript:mp(donateEvent)' style='color: grey'>Donate</a></font>";
                             Telemetry.GA4Event donateEvent = new(Telemetry.GA4Event.Event.Name.donate, out Telemetry.GA4Event.Event eventData);
                             eventData
                                 .AddParameter("source", "console")
@@ -523,6 +524,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 console.Update($"Scanning Google calendar '{Sync.Engine.Calendar.Instance.Profile.UseGoogleCalendar.Name}'...");
                 try {
                     Ogcs.Google.Calendar.Instance.GetSettings();
+                    Ogcs.Google.Recurrence.GoogleExceptionsReset();
                     googleEntries = Ogcs.Google.Calendar.Instance.GetCalendarEntriesInRange();
                 } catch (AggregateException agex) {
                     agex.AnalyseAggregate();
@@ -607,8 +609,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 console.Update(sb, Console.Markup.info, logit: true);
 
                 //Protect against very first syncs which may trample pre-existing non-Outlook events in Google
-                if (!this.Profile.DisableDelete && !this.Profile.ConfirmOnDelete &&
-                    googleEntriesToBeDeleted.Count == googleEntries.Count && googleEntries.Count > 1) {
+                if (!this.Profile.DisableDelete && googleEntriesToBeDeleted.Count == googleEntries.Count && googleEntries.Count > 1) {
                     if (Ogcs.Extensions.MessageBox.Show("All Google events are going to be deleted. Do you want to allow this?" +
                         "\r\nNote, " + googleEntriesToBeCreated.Count + " events will then be created.", "Confirm mass deletion",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No) {
@@ -717,8 +718,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                 console.Update(sb, Console.Markup.info, logit: true);
 
                 //Protect against very first syncs which may trample pre-existing non-Google events in Outlook
-                if (!this.Profile.DisableDelete && !this.Profile.ConfirmOnDelete &&
-                    outlookEntriesToBeDeleted.Count == outlookEntries.Count && outlookEntries.Count > 1) {
+                if (!this.Profile.DisableDelete && outlookEntriesToBeDeleted.Count == outlookEntries.Count && outlookEntries.Count > 1) {
                     if (Ogcs.Extensions.MessageBox.Show("All Outlook events are going to be deleted. Do you want to allow this?" +
                         "\r\nNote, " + outlookEntriesToBeCreated.Count + " events will then be created.", "Confirm mass deletion",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No) {

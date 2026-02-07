@@ -413,6 +413,7 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
                     createdAi = createCalendarEntry_save(newAi, ref ev);
                     events[g] = ev;
                 } catch (System.Exception ex) {
+                    log.Debug(Newtonsoft.Json.JsonConvert.SerializeObject(newAi));
                     events.RemoveAt(g);
                     Forms.Main.Instance.Console.UpdateWithError(Ogcs.Google.Calendar.GetEventSummary("New appointment failed to save.", ev, out String anonSummary, true), ex, logEntry: anonSummary);
                     Ogcs.Exception.Analyse(ex, true);
@@ -420,6 +421,23 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
                         continue;
                     else
                         throw new UserCancelledSyncException("User chose not to continue sync.");
+                }
+
+                try {
+                    //Add the Google event IDs into Outlook appointment.
+                    //This needs to be done after the creation, else sporadic IrresolvableConflict HTTP 409 errors can occur
+                    Event aiPatch = new Event() { 
+                        Id = createdAi.Id, 
+                        Start = createdAi.Start,
+                        Subject = createdAi.Subject,
+                        SeriesMasterId = createdAi.SeriesMasterId, 
+                        Recurrence = createdAi.Recurrence 
+                    };
+                    CustomProperty.AddGoogleIDs(ref aiPatch, ev);
+                    UpdateCalendarEntry_save(ref aiPatch);
+                } catch (System.Exception ex) {
+                    ex.Analyse("Unable to save Extension data to newly created appointment.");
+                    log.Warn("This should result in a 'reclaim' during the next sync.");
                 }
 
                 Recurrence.CreateOutlookExceptions(ev, createdAi);
@@ -512,8 +530,6 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
                 ai.GoogleMeet(ev.HangoutLink);
             }
             */
-            //Add the Google event IDs into Outlook appointment.
-            CustomProperty.AddGoogleIDs(ref ai, ev);
         }
 
         private Microsoft.Graph.Attendee createRecipient(GcalData.EventAttendee ea) {
@@ -1241,7 +1257,7 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
 
         #region STATIC functions
         public static string Signature(Microsoft.Graph.Event ai) {
-            return (ai.Subject + ";" + ai.Start.SafeDateTime().ToPreciseString() + ";" + ai.End.SafeDateTime().ToPreciseString()).Trim();
+            return (ai.Subject + ";" + ai.Start.SafeDateTimeOffset().ToPreciseString() + ";" + ai.End.SafeDateTimeOffset().ToPreciseString()).Trim();
         }
 
         public static void ExportToCSV(String action, String filename, List<Event> ais) {
@@ -1299,8 +1315,8 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
         private static string exportToCSV(Event ai) {
             StringBuilder csv = new StringBuilder();
             
-            csv.Append(ai.Start.SafeDateTime().ToPreciseString() + ",");
-            csv.Append(ai.End.SafeDateTime().ToPreciseString() + ",");
+            csv.Append(ai.Start.SafeDateTimeOffset().ToPreciseString() + ",");
+            csv.Append(ai.End.SafeDateTimeOffset().ToPreciseString() + ",");
             csv.Append("\"" + ai.Subject + "\",");
 
             if (ai.Location == null) csv.Append(",");
@@ -1325,7 +1341,7 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
             csv.Append(ai.Id + "," + Sync.Engine.Calendar.Instance.Profile.UseOutlookCalendar.Id + ",");
             csv.Append((CustomProperty.Get(ai, CustomProperty.MetadataId.gEventID) ?? "") + ",");
             csv.Append((CustomProperty.Get(ai, CustomProperty.MetadataId.gCalendarId) ?? "") + ",");
-            csv.Append(CustomProperty.GetOGCSlastModified(ai).ToString() + ",");
+            csv.Append((CustomProperty.Get(ai, CustomProperty.MetadataId.ogcsModified) ?? "") + ",");
             csv.Append((CustomProperty.Get(ai, CustomProperty.MetadataId.forceSave) ?? ""));
 
             return csv.ToString();

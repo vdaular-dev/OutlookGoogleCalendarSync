@@ -38,24 +38,29 @@ namespace OutlookGoogleCalendarSync.Extensions {
     }
 
     public static class DateTime {
+        /// <summary>This used to be the string format Google held date-times, eg "2012-08-20T00:00:00+02:00"</summary>
+        private static String preciseString = "yyyy-MM-ddTHH:mm:ssZ";
+
         /// <summary>
-        /// Returns the DateTime with UTC time.
-        /// This used to be the string format Google held date-times, eg "2012-08-20T00:00:00+02:00"
+        /// Returns the DateTimeOffset, if parsable.
         /// </summary>
-        /// <param name="dt">Date-time value</param>
-        /// <returns>Formatted string</returns>
-        public static String ToPreciseString(this System.DateTime dt) {
-            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", new CultureInfo("en-US"));
+        /// <param name="dt">Date-time string value</param>
+        /// <returns>Parsed DateTimeOffset</returns>
+        public static DateTimeOffset GetPreciseDate(this String dt) {
+            DateTimeOffset retVal;
+            if (!DateTimeOffset.TryParseExact(dt, preciseString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out retVal)) {
+                throw new FormatException($"DateTime string value of '{dt}' was not of the expected format {preciseString}.");
+            }
+            return retVal;
         }
 
         /// <summary>
         /// Returns the DateTime with time and GMT offset.
-        /// This used to be the string format Google held date-times, eg "2012-08-20T00:00:00+02:00"
         /// </summary>
         /// <param name="dt">Date-time offset value</param>
         /// <returns>Formatted string</returns>
         public static String ToPreciseString(this System.DateTimeOffset dt) {
-            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", new CultureInfo("en-US"));
+            return dt.ToUniversalTime().ToString(preciseString, CultureInfo.InvariantCulture);
         }
 
         /// <summary>
@@ -86,19 +91,30 @@ namespace OutlookGoogleCalendarSync.Extensions {
         /// Parses the DateTimeTimeZone string to a local DateTime
         /// </summary>
         /// <returns>Local DateTime</returns>
+        [Obsolete("[deprecated, use SafeDateTimeOffset()]")]
         public static System.DateTime SafeDateTime(this Microsoft.Graph.DateTimeTimeZone evDt) {
             System.DateTime safeDate;
             if (evDt.TimeZone == "UTC") {
                 safeDate = System.DateTime.Parse(evDt.DateTime, null, DateTimeStyles.AssumeUniversal);
-                if (safeDate.ToUniversalTime().TimeOfDay == new TimeSpan(0, 0, 0)) {
-                    safeDate = safeDate.Date;
-                    safeDate = System.DateTime.SpecifyKind(safeDate, DateTimeKind.Unspecified);
-                }
             } else {
                 Int16 offset = TimezoneDB.GetUtcOffset(evDt.TimeZone);
                 safeDate = System.DateTime.Parse(evDt.DateTime).AddMinutes(-offset);
                 safeDate = System.DateTime.SpecifyKind(safeDate, DateTimeKind.Utc);
                 safeDate = safeDate.ToLocalTime();
+            }
+            return safeDate;
+        }
+        public static System.DateTimeOffset SafeDateTimeOffset(this Microsoft.Graph.DateTimeTimeZone evDt, Boolean? isAllDay = false) {
+            System.DateTimeOffset safeDate;
+            if (evDt.TimeZone == "UTC") {
+                safeDate = System.DateTime.Parse(evDt.DateTime, null, DateTimeStyles.AssumeUniversal);
+                if (isAllDay ?? false) {
+                    safeDate = System.DateTime.SpecifyKind(safeDate.ToUniversalTime().Date, DateTimeKind.Unspecified);
+                }
+            } else {
+                Int16 offset = TimezoneDB.GetUtcOffset(evDt.TimeZone);
+                safeDate = System.DateTime.Parse(evDt.DateTime).AddMinutes(-offset);
+                safeDate = System.DateTime.SpecifyKind(safeDate.DateTime, DateTimeKind.Utc);
             }
             return safeDate;
         }
@@ -152,7 +168,7 @@ namespace OutlookGoogleCalendarSync.Extensions {
             if ((bool)ai.IsAllDay)
                 return true;
             if (logicallyEquivalent)
-                return (ai.Start.SafeDateTime().TimeOfDay == new TimeSpan(0, 0, 0) && ai.End.SafeDateTime().TimeOfDay == new TimeSpan(0, 0, 0));
+                return ai.Start.SafeDateTime().TimeOfDay == new TimeSpan(0, 0, 0) && ai.End.SafeDateTime().TimeOfDay == new TimeSpan(0, 0, 0);
             else
                 return false;
         }

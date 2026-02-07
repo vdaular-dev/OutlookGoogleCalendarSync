@@ -82,10 +82,11 @@ namespace OutlookGoogleCalendarSync {
                     Application.Run(new Forms.Main(startingTab));
                 } catch (ApplicationException ex) {
                     String reportError = ex.Message;
-                    log.Fatal(reportError);
+                    Boolean suppressCloudLogPrompt = (ex.Data.Count > 0 && ex.Data.Contains("SuppressCloudLogPrompt"));
+                    if (suppressCloudLogPrompt) log.Fail(reportError); else log.Fatal(reportError);
                     if (ex.InnerException != null) {
                         reportError = ex.InnerException.Message;
-                        log.Fatal(reportError);
+                        if (suppressCloudLogPrompt) log.Fail(reportError); else log.Fatal(reportError);
                     }
                     Ogcs.Extensions.MessageBox.Show(reportError, "Application terminated!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     throw new ApplicationException(ex.Message.StartsWith("COM error") ? "Suggest startup delay" : "");
@@ -153,6 +154,7 @@ namespace OutlookGoogleCalendarSync {
             Dictionary<String, String> settingsArg = parseArgument(args, 's');
             Settings.InitialiseConfigFile(settingsArg["Filename"], settingsArg["Directory"]);
 
+            log.Info("Running OGCS from " + MaskFilePath(Application.ExecutablePath));
             log.Info("Storing user files in directory: " + MaskFilePath(UserFilePath));
 
             //Before settings have been loaded, early config of cloud logging
@@ -528,8 +530,7 @@ namespace OutlookGoogleCalendarSync {
                 } else { //Release notes not updated for hotfixes.
                     String releaseNotesUrl = "/release-notes.html";
                     if (!String.IsNullOrEmpty(Settings.Instance.GaccountEmail)) {
-                        byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(Settings.Instance.GaccountEmail);
-                        releaseNotesUrl += "?id=" + System.Convert.ToBase64String(plainTextBytes);
+                        releaseNotesUrl += "?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail);
                     }
                     Helper.OpenBrowser(OgcsWebsite + releaseNotesUrl);
                     if (isSquirrelInstall) {
@@ -585,7 +586,7 @@ namespace OutlookGoogleCalendarSync {
                     .AddParameter("account_present", !String.IsNullOrEmpty(Settings.Instance.GaccountEmail))
                     .Send();
             } finally {
-                Helper.OpenBrowser("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=44DUQ7UT6WE2C&item_name=Outlook Google Calendar Sync from " + Settings.Instance.GaccountEmail);
+                Helper.OpenBrowser(OgcsWebsite + "/donate?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail));
             }
         }
 
