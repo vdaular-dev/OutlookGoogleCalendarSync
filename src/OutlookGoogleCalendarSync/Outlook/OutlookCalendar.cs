@@ -1681,7 +1681,9 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 //Don't delete any items that aren't yet in Google or just created in Google during this sync
                 for (int o = outlook.Count - 1; o >= 0; o--) {
                     if (!CustomProperty.Exists(outlook[o], CustomProperty.MetadataId.gEventID) ||
-                        outlook[o].LastModificationTime > Sync.Engine.Instance.SyncStarted)
+                        CustomProperty.GetOGCSlastModified(outlook[o]) > Sync.Engine.Instance.SyncStarted)
+                        //OGCSlastModified must be used, not LastModificationTime, as the latter may inexplicably (Exchange caching?) be prior to the sync start
+                        //Evidenced by issue #2268
                         outlook.Remove(outlook[o]);
                 }
             }
