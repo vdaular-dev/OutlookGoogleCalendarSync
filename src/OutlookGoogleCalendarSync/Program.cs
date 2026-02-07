@@ -671,7 +671,7 @@ namespace OutlookGoogleCalendarSync {
             try {
                 System.Diagnostics.Process currentProcess = System.Diagnostics.Process.GetCurrentProcess();
                 System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName(currentProcess.ProcessName);
-                
+
                 if (processes.Count() > 1) {
                     log.Warn("There are " + processes.Count() + " " + currentProcess.ProcessName + " processes currently running.");
                     List<System.Linq.IGrouping<string, System.Diagnostics.Process>> sameExe = processes.GroupBy(p => p.MainModule.FileName).Where(e => e.Count() > 1).ToList();
@@ -711,6 +711,16 @@ namespace OutlookGoogleCalendarSync {
             log.Debug(" " + commandLine);
 
             return commandLine;
+        }
+
+        public static void Shutdown() {
+            try {
+                Forms.Main.Instance.NotificationTray.ExitItem_Click(null, null);
+            } catch (System.Exception ex) {
+                log.Error("Failed to exit via the notification tray icon. " + ex.Message);
+                log.Debug("NotificationTray is " + (Forms.Main.Instance.NotificationTray == null ? "null" : "not null"));
+                Environment.Exit(Environment.ExitCode);
+            }
         }
     }
 }
