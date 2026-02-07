@@ -930,10 +930,6 @@ namespace OutlookGoogleCalendarSync.Outlook {
         }
 
         private void deleteCalendarEntry_save(AppointmentItem ai) {
-            DateTimeOffset ogcsLM = CustomProperty.GetOGCSlastModified(ai);
-            log.Debug($"OGCSlastModified: {ogcsLM.ToPreciseString()}; {ogcsLM.ToString("yyyyMMddHHmmss")}");
-            log.Debug($"LastModificationTime: {Ogcs.Extensions.DateTime.ToPreciseString(ai.LastModificationTime)}; {ai.LastModificationTime.ToString("yyyyMMddHHmmss")}");
-            log.Debug($"SyncStarted: {Ogcs.Extensions.DateTime.ToPreciseString(Sync.Engine.Instance.SyncStarted)}; {Sync.Engine.Instance.SyncStarted.ToString("yyyyMMddHHmmss")}");
             ai.Delete();
         }
         #endregion
