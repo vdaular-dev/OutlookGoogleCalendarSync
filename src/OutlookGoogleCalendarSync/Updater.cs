@@ -121,13 +121,15 @@ namespace OutlookGoogleCalendarSync {
                 if ((Settings.Instance.AlphaReleases && updates.ReleasesToApply.Any()) ||
                     updates.ReleasesToApply.Any(r => r.Version.SpecialVersion != "alpha")) {
 
-                    if (updates.CurrentlyInstalledVersion != null) {
-                        log.Info("Currently installed version: " + Program.MaskFilePath(updates.CurrentlyInstalledVersion.Version.ToString()));
+                    if (updates.CurrentlyInstalledVersion != null)
+                        log.Info("Currently installed version: " + updates.CurrentlyInstalledVersion.Version.ToString());
+                    else {
+                        log.Warn("Currently installed version: UNKNOWN");
                         if (detectedUpgradeToSelf(updates)) return false;
                     }
 
                     log.Info("Found " + updates.ReleasesToApply.Count() + " newer releases available.");
-                    log.Info("Download directory = " + updates.PackageDirectory);
+                    log.Info("Download directory = " + Program.MaskFilePath(updates.PackageDirectory));
 
                     if (!this.isManualCheck) {
                         if (updates.CurrentlyInstalledVersion?.Version.Version.Major == 2) {
@@ -362,8 +364,8 @@ namespace OutlookGoogleCalendarSync {
         /// <param name="updates">The updates available</param>
         /// <returns>True if the only upgrade is to the current version</returns>
         private Boolean detectedUpgradeToSelf(UpdateInfo updates) {
-            if (updates.ReleasesToApply.Count == 1 && updates.CurrentlyInstalledVersion.Version == updates.FutureReleaseEntry.Version) {
-                log.Warn("Upgrade detected is for the same version as current. Checking the RELEASES file content...");
+            if (updates.ReleasesToApply.Count == 1 && Program.VersionToInt(Application.ProductVersion) >= Program.VersionToInt(updates.FutureReleaseEntry.Version.Version.ToString())) {
+                log.Warn("Upgrade detected is for the same version, or earlier, as current. Checking the RELEASES file content...");
                 String releasesFile = Path.Combine(updates.PackageDirectory, "RELEASES");
                 String releasesContent = File.ReadAllText(releasesFile);
                 if (string.IsNullOrEmpty(releasesContent.Trim())) {
