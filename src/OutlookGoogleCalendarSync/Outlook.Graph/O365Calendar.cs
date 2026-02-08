@@ -1195,22 +1195,24 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
             if (!profile.SetEntriesPrivate)
                 return (gVisibility == "private") ? Sensitivity.Private : Sensitivity.Normal;
 
-            if (profile.SyncDirection.Id != Sync.Direction.Bidirectional.Id) {
-                return (profile.PrivacyLevel == Sensitivity.Private.ToString()) ? Sensitivity.Private : Sensitivity.Normal;
+            Sensitivity overrideSensitivity = Sensitivity.Normal;
+            if (!Enum.TryParse(Regex.Replace(profile.PrivacyLevel, "^ol", ""), out overrideSensitivity))
+                log.Error("Could not convert string '" + profile.PrivacyLevel + "' to Graph.Sensitivity type. Defaulting override to normal.");
+
+            if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Privacy enforcement is in other direction
+                if (oSensitivity == null)
+                    return (gVisibility == "private") ? Sensitivity.Private : Sensitivity.Normal;
+                else if (!profile.CreatedItemsOnly && (gVisibility != ((overrideSensitivity == Sensitivity.Normal) ? "public" : "private"))) {
+                    log.Warn("Google privacy override has been manually altered - so syncing this back.");
+                    return (gVisibility == "private") ? Sensitivity.Private : Sensitivity.Normal;
+                } else
+                    return (Sensitivity)oSensitivity;
             } else {
-                if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Privacy enforcement is in other direction
-                    if (oSensitivity == null)
-                        return (gVisibility == "private") ? Sensitivity.Private : Sensitivity.Normal;
-                    else if (oSensitivity == Sensitivity.Private && gVisibility != "private") {
-                        log.Fine("Source of truth for enforced privacy is already set private and target is NOT - so syncing this back.");
-                        return Sensitivity.Normal;
-                    } else
-                        return (Sensitivity)oSensitivity;
-                } else {
-                    if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oSensitivity == null))
-                        return (profile.PrivacyLevel == Sensitivity.Private.ToString()) ? Sensitivity.Private : Sensitivity.Normal;
-                    else
-                        return (gVisibility == "private") ? Sensitivity.Private : Sensitivity.Normal;
+                if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oSensitivity == null))
+                    return overrideSensitivity;
+                else {
+                    if (profile.CreatedItemsOnly) return (Sensitivity)oSensitivity;
+                    else return overrideSensitivity;
                 }
             }
         }
@@ -1224,32 +1226,31 @@ namespace OutlookGoogleCalendarSync.Outlook.Graph {
             SettingsStore.Calendar profile = Sync.Engine.Calendar.Instance.Profile;
             List<FreeBusyStatus> persistOutlookStatus = new List<FreeBusyStatus> { FreeBusyStatus.Tentative, FreeBusyStatus.Oof, FreeBusyStatus.WorkingElsewhere };
 
-            if (!profile.SetEntriesAvailable) 
+            if (!profile.SetEntriesAvailable)
                 return (gTransparency == "transparent") ? FreeBusyStatus.Free :
                     persistOutlookStatus.Contains(oBusyStatus ?? FreeBusyStatus.Busy) ? (FreeBusyStatus)oBusyStatus : FreeBusyStatus.Busy;
 
-            FreeBusyStatus overrideFbStatus = FreeBusyStatus.Free;
-            try {
-                Enum.TryParse(profile.AvailabilityStatus, out overrideFbStatus);
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.AvailabilityStatus + "' to FreeBusyStatus type. Defaulting override to available.");
-            }
+            FreeBusyStatus overrideFbStatus = FreeBusyStatus.Busy;
+            if (!Enum.TryParse(Regex.Replace(profile.AvailabilityStatus, "^ol", "").Replace("OutOfOffice", "Oof"), out overrideFbStatus))
+                log.Error("Could not convert string '" + profile.AvailabilityStatus + "' to Graph.FreeBusyStatus type. Defaulting override to busy.");
 
-            if (profile.SyncDirection.Id != Sync.Direction.Bidirectional.Id) {
-                return overrideFbStatus;
+            if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Availability enforcement is in other direction
+                if (oBusyStatus == null)
+                    return (gTransparency == "transparent") ? FreeBusyStatus.Free : FreeBusyStatus.Busy;
+
+                else if (!profile.CreatedItemsOnly && (gTransparency != ((overrideFbStatus == FreeBusyStatus.Free) ? "transparent" : "opaque"))) {
+                    log.Warn("Google availability override has been manually altered - so syncing this back.");
+                    return (gTransparency == "transparent") ? FreeBusyStatus.Free : FreeBusyStatus.Busy;
+                } else
+                    return (FreeBusyStatus)oBusyStatus;
             } else {
-                if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Availability enforcement is in other direction
-                    if (oBusyStatus == null)
-                        return (gTransparency == "transparent") ? FreeBusyStatus.Free :
-                            persistOutlookStatus.Contains(oBusyStatus ?? FreeBusyStatus.Busy) ? (FreeBusyStatus)oBusyStatus : FreeBusyStatus.Busy;
-                    else
+                if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oBusyStatus == null))
+                    return overrideFbStatus;
+                else {
+                    if (profile.CreatedItemsOnly || persistOutlookStatus.Contains((FreeBusyStatus)oBusyStatus))
                         return (FreeBusyStatus)oBusyStatus;
-                } else {
-                    if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oBusyStatus == null))
-                        return overrideFbStatus;
                     else
-                        return (gTransparency == "transparent") ? FreeBusyStatus.Free :
-                            persistOutlookStatus.Contains(oBusyStatus ?? FreeBusyStatus.Busy) ? (FreeBusyStatus)oBusyStatus : FreeBusyStatus.Busy;
+                        return overrideFbStatus;
                 }
             }
         }
