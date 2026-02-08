@@ -1910,11 +1910,19 @@ namespace OutlookGoogleCalendarSync.Forms {
 
         #region More Options Panel
         private void tbCreatedItemsOnly_SelectedItemChanged(object sender, EventArgs e) {
-            ActiveCalendarProfile.CreatedItemsOnly = tbCreatedItemsOnly.SelectedIndex == 1;
-            if (tbCreatedItemsOnly.SelectedIndex == 0)
+            ActiveCalendarProfile.CreatedItemsOnly = (String)tbCreatedItemsOnly.SelectedItem == "items created";
+            if ((String)tbCreatedItemsOnly.SelectedItem == "all items") {
                 lTargetSyncCondition.Text = "synced to";
-            else
+                if ((String)tbTargetCalendar.SelectedItem == "target calendar")
+                    tbTargetCalendar.SelectedIndex -= 1;
+                if (tbTargetCalendar.Items.Contains("target calendar"))
+                    tbTargetCalendar.Items.Remove("target calendar");
+
+            } else if ((String)tbCreatedItemsOnly.SelectedItem == "items created") {
                 lTargetSyncCondition.Text = "by sync in";
+                if (!tbTargetCalendar.Items.Contains("target calendar"))
+                    tbTargetCalendar.Items.Add("target calendar");
+            }
         }
 
         private void tbTargetCalendar_SelectedItemChanged(object sender, EventArgs e) {

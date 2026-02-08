@@ -1052,6 +1052,7 @@ namespace OutlookGoogleCalendarSync.Outlook {
         /// <param name="oSensitivity">Outlook's current setting</param>
         private OlSensitivity getPrivacy(String gVisibility, OlSensitivity? oSensitivity) {
             SettingsStore.Calendar profile = Sync.Engine.Calendar.Instance.Profile;
+            gVisibility ??= "default";
 
             if (!profile.SetEntriesPrivate)
                 return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
@@ -1063,7 +1064,7 @@ namespace OutlookGoogleCalendarSync.Outlook {
             if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Privacy enforcement is in other direction
                 if (oSensitivity == null)
                     return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
-                else if (!profile.CreatedItemsOnly && (overrideSensitivity == oSensitivity && gVisibility != ((overrideSensitivity == OlSensitivity.olNormal) ? "public" : "private"))) {
+                else if (!profile.CreatedItemsOnly && (gVisibility != ((overrideSensitivity == OlSensitivity.olNormal) ? "public" : "private"))) {
                     log.Warn("Google privacy override has been manually altered - so syncing this back.");
                     return (gVisibility == "private") ? OlSensitivity.olPrivate : OlSensitivity.olNormal;
                 } else
@@ -1098,7 +1099,7 @@ namespace OutlookGoogleCalendarSync.Outlook {
             if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Availability enforcement is in other direction
                 if (oBusyStatus == null)
                     return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
-                else if (!profile.CreatedItemsOnly && (overrideFbStatus == oBusyStatus && gTransparency != ((overrideFbStatus == OlBusyStatus.olFree) ? "transparent" : "opaque"))) {
+                else if (!profile.CreatedItemsOnly && (gTransparency != ((overrideFbStatus == OlBusyStatus.olFree) ? "transparent" : "opaque"))) {
                     log.Warn("Google availability override has been manually altered - so syncing this back.");
                     return (gTransparency == "transparent") ? OlBusyStatus.olFree : OlBusyStatus.olBusy;
                 } else
@@ -1119,7 +1120,7 @@ namespace OutlookGoogleCalendarSync.Outlook {
         /// Get the Outlook category colour name from a Google colour ID
         /// </summary>
         /// <param name="gColourId">The Google colour ID</param>
-        /// <param name="oColour">The Outlook category, if already assigned to appointment</param>
+        /// <param name="oColour">The Outlook category name, if already assigned to appointment</param>
         /// <returns>Outlook category name</returns>
         private String getColour(String gColourId, String oColour) {
             SettingsStore.Calendar profile = Sync.Engine.Calendar.Instance.Profile;
@@ -1133,7 +1134,11 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 if (profile.TargetCalendar.Id == Sync.Direction.OutlookToGoogle.Id) { //Colour forced to sync in other direction
                     if (oColour == null) //Creating item
                         return "";
-                    else return oColour;
+                    else if (!profile.CreatedItemsOnly && ((gColourId ?? "0") != Google.Calendar.Instance.GetColour(oColour).Id)) {
+                        log.Warn("Google colour override has been manually altered - so syncing this back.");
+                        return GetCategoryColour(gColourId ?? "0");
+                    } else
+                        return oColour;
 
                 } else {
                     if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && oColour == null))
@@ -1148,6 +1153,12 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 return GetCategoryColour(gColourId ?? "0");
             }
         }
+        /// <summary>
+        /// Get the Outlook category name, mapped from a Google colour ID
+        /// </summary>
+        /// <param name="gColourId">Google colour ID with which to map to Outlook</param>
+        /// <param name="createMissingCategory">If true, create mapped Outlook category</param>
+        /// <returns></returns>
         public String GetCategoryColour(String gColourId, Boolean createMissingCategory = true) {
             OlCategoryColor? outlookColour = null;
 
