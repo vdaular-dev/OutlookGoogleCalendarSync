@@ -470,16 +470,19 @@ namespace OutlookGoogleCalendarSync.Outlook {
             Add(ref ai, MetadataId.ogcsModifiedText, System.DateTimeOffset.UtcNow);
         }
 
+#nullable enable
+
         /// <summary>
         /// Log the various User Properties.
         /// </summary>
         /// <param name="ai">The Appointment item.</param>
-        /// <param name="thresholdLevel">Only log if logging configured at this level or higher.</param>
-        public static void LogProperties(AppointmentItem ai, log4net.Core.Level thresholdLevel) {
-            if (((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).Root.Level.Value > thresholdLevel.Value) return;
+        /// <param name="thresholdLevel">Only log if logging configured at this level or lower. Default DEBUG.</param>
+        public static void LogProperties(AppointmentItem ai, log4net.Core.Level? thresholdLevel = null) {
+            thresholdLevel ??= log4net.Core.Level.Debug;
+            if (((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).Root.Level?.Value > thresholdLevel.Value) return;
 
-            UserProperties ups = null;
-            UserProperty up = null;
+            UserProperties? ups = null;
+            UserProperty? up = null;
             try {
                 log.Debug(Calendar.GetEventSummary(ai));
                 ups = ai.UserProperties;
@@ -500,6 +503,9 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 ups = (UserProperties)Calendar.ReleaseObject(ups);
             }
         }
+
+#nullable disable
+
     }
 
     public static class ReflectionProperties {

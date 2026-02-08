@@ -343,13 +343,16 @@ namespace OutlookGoogleCalendarSync.Google {
             Add(ref ev, MetadataId.ogcsModified, System.DateTimeOffset.UtcNow);
         }
 
+#nullable enable
+
         /// <summary>
         /// Log the various User Properties.
         /// </summary>
         /// <param name="ev">The Event.</param>
-        /// <param name="thresholdLevel">Only log if logging configured at this level or higher.</param>
-        public static void LogProperties(Event ev, log4net.Core.Level thresholdLevel) {
-            if (((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).Root.Level.Value > thresholdLevel.Value) return;
+        /// <param name="thresholdLevel">Only log if logging configured at this level or lower. Default DEBUG.</param>
+        public static void LogProperties(Event ev, log4net.Core.Level? thresholdLevel = null) {
+            thresholdLevel ??= log4net.Core.Level.Debug;
+            if (((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).Root.Level?.Value > thresholdLevel.Value) return;
 
             try {
                 if (ev.ExtendedProperties != null && ev.ExtendedProperties.Private__ != null) {
@@ -362,5 +365,8 @@ namespace OutlookGoogleCalendarSync.Google {
                 ex.Analyse("Failed to log Event ExtendedProperties");
             }
         }
+
+#nullable disable
+
     }
 }
