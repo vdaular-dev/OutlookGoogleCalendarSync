@@ -454,7 +454,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     cbExcludeGoals.Checked = profile.ExcludeGoals;
                     cbExcludeGoals.Enabled = Ogcs.Google.Calendar.IsDefaultCalendar() ?? true;
                     cbAddGMeet.Checked = profile.AddGMeet;
-                    
+
                     if (Settings.Instance.UsingPersonalAPIkeys()) {
                         cbShowDeveloperOptions.Checked = true;
                         tbClientID.Text = Settings.Instance.PersonalClientIdentifier;
@@ -502,9 +502,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                     ddPrivacy.DisplayMember = "Value";
                     ddPrivacy.ValueMember = "Key";
                     ddPrivacy.Items.Clear();
-                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>();
-                    privacy.Add(OlSensitivity.olPrivate, "Private");
-                    privacy.Add(OlSensitivity.olNormal, "Public");
+                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>{
+                        { OlSensitivity.olPrivate, "Private" },
+                        { OlSensitivity.olNormal, "Public" } 
+                    };
                     ddPrivacy.DataSource = new BindingSource(privacy, null);
                     ddPrivacy.SelectedValue = Enum.Parse(typeof(OlSensitivity), profile.PrivacyLevel);
 
@@ -694,9 +695,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                 ddAvailabilty.DisplayMember = "Value";
                 ddAvailabilty.ValueMember = "Key";
                 ddAvailabilty.Items.Clear();
-                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>();
-                availability.Add(OlBusyStatus.olFree, "Free");
-                availability.Add(OlBusyStatus.olBusy, "Busy");
+                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>{
+                    { OlBusyStatus.olFree, "Free" },
+                    { OlBusyStatus.olBusy, "Busy" }
+                };
                 if (profile.SyncDirection.Id != Sync.Direction.OutlookToGoogle.Id && tbTargetCalendar.Text != "Google calendar") {
                     availability.Add(OlBusyStatus.olTentative, "Tentative");
                     availability.Add(OlBusyStatus.olOutOfOffice, "Out of Office");
