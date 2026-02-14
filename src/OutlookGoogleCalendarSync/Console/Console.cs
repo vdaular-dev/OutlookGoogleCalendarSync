@@ -285,19 +285,21 @@ namespace OutlookGoogleCalendarSync {
         }
 
         private void awaitRefresh() {
-            while (this.awaitingRefresh && !isCleared()) {
+            while (this.awaitingRefresh && !IsCleared) {
                 System.Windows.Forms.Application.DoEvents();
                 System.Threading.Thread.Sleep(100);
             }
             this.awaitingRefresh = false;
         }
 
-        private Boolean isCleared() {
-            return (this.wb.DocumentText == "<HTML></HTML>\0" || this.wb.DocumentText == header + footer);
+        public Boolean IsCleared {
+            get {
+                return (this.DocumentText == "<HTML></HTML>\0" || this.DocumentText == header + footer);
+            }
         }
 
         public void Clear() {
-            if (isCleared()) return;
+            if (IsCleared) return;
 
             content = header + footer;
             awaitingRefresh = true;

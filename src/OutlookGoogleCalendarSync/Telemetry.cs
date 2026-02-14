@@ -296,7 +296,19 @@ namespace OutlookGoogleCalendarSync {
 
             public void Get() {
                 if ((DateTime.UtcNow - restocked).TotalDays < 1) return;
-                new System.Threading.Thread(() => { _ = requestNews(); }).Start();
+                new System.Threading.Thread(async () => {
+                    await requestNews();
+                    try {
+                        log.Info(newsStand.News.Count() + " news item(s) retrieved.");
+                        while (!Forms.Main.Instance.IsHandleCreated)
+                            System.Threading.Thread.Sleep(250);
+                        if (Forms.Main.Instance.Console.IsCleared && !Sync.Engine.Instance.SyncingNow)
+                            this.Distribute();
+
+                    } catch (System.Exception ex) {
+                        ex.Analyse();
+                    }
+                }).Start();
             }
 
             private async Task requestNews() {
