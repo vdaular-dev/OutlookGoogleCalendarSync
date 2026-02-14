@@ -185,19 +185,26 @@ namespace OutlookGoogleCalendarSync {
             /// </summary>
             /// <param name="async">Submit telemetry asynchronously</param>
             public void Send(Boolean async = true) {
+                String jsonPayload = Newtonsoft.Json.JsonConvert.SerializeObject(this);
+                jsonPayload = jsonPayload.Replace("\"parameters\":", "\"params\":");
+                Send(jsonPayload, async);
+            }
+
+            /// <summary>
+            /// Send telemetry data, prepared as JSON string
+            /// </summary>
+            /// <param name="jsonPayload">JSON.stringified payload</param>
+            /// <param name="async">Submit telemetry asynchronously</param>
+            public static void Send(String jsonPayload, Boolean async = true) {
                 if ((Settings.InstanceInitialiased && Settings.Instance.TelemetryDisabled) || Program.InDeveloperMode) {
                     log.Debug("Telemetry is disabled.");
                     return;
                 }
-
                 try {
                     String baseAnalyticsUrl = "https://www.google-analytics.com/mp/collect?api_secret=kWOsAm2tQny1xOjiwMyC5Q&measurement_id=G-S6RMS8GHEE";
 
                     Extensions.OgcsWebClient wc = new Extensions.OgcsWebClient();
                     wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-
-                    String jsonPayload = Newtonsoft.Json.JsonConvert.SerializeObject(this);
-                    jsonPayload = jsonPayload.Replace("\"parameters\":", "\"params\":");
 
                     log.Debug("GA4: " + jsonPayload);
                     if (async) {
@@ -299,7 +306,7 @@ namespace OutlookGoogleCalendarSync {
                 new System.Threading.Thread(async () => {
                     await requestNews();
                     try {
-                        log.Info(newsStand.News.Count() + " news item(s) retrieved.");
+                        log.Info((newsStand?.News.Count() ?? 0) + " news item(s) retrieved.");
                         while (!Forms.Main.Instance.IsHandleCreated)
                             System.Threading.Thread.Sleep(250);
                         if (Forms.Main.Instance.Console.IsCleared && !Sync.Engine.Instance.SyncingNow)
