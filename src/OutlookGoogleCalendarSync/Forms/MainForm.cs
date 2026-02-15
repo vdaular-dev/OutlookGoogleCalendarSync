@@ -160,7 +160,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             #endregion
 
             #region Profile
-            log.Debug("Loading profiles.");
+            log.Debug($"Loading {Settings.Instance.Calendars.Count} profiles.");
             foreach (SettingsStore.Calendar calendar in Settings.Instance.Calendars) {
                 ddProfile.Items.Add(calendar._ProfileName);
             }
@@ -195,7 +195,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             cbStartInTray.Checked = Settings.Instance.StartInTray;
             cbMinimiseToTray.Checked = Settings.Instance.MinimiseToTray;
             cbMinimiseNotClose.Checked = Settings.Instance.MinimiseNotClose;
-            cbPortable.Checked = Settings.Instance.Portable;
+            cbPortable.Checked = Settings.Instance.Portable && !Program.IsInstalled;
             cbPortable.Enabled = !Program.IsInstalled;
             #region Logging
             for (int i = 0; i < cbLoggingLevel.Items.Count; i++) {
@@ -453,7 +453,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     cbExcludeGoals.Checked = profile.ExcludeGoals;
                     cbExcludeGoals.Enabled = Ogcs.Google.Calendar.IsDefaultCalendar() ?? true;
                     cbAddGMeet.Checked = profile.AddGMeet;
-                    
+
                     if (Settings.Instance.UsingPersonalAPIkeys()) {
                         cbShowDeveloperOptions.Checked = true;
                         tbClientID.Text = Settings.Instance.PersonalClientIdentifier;
@@ -501,9 +501,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                     ddPrivacy.DisplayMember = "Value";
                     ddPrivacy.ValueMember = "Key";
                     ddPrivacy.Items.Clear();
-                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>();
-                    privacy.Add(OlSensitivity.olPrivate, "Private");
-                    privacy.Add(OlSensitivity.olNormal, "Public");
+                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>{
+                        { OlSensitivity.olPrivate, "Private" },
+                        { OlSensitivity.olNormal, "Public" } 
+                    };
                     ddPrivacy.DataSource = new BindingSource(privacy, null);
                     ddPrivacy.SelectedValue = Enum.Parse(typeof(OlSensitivity), profile.PrivacyLevel);
 
@@ -693,9 +694,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                 ddAvailabilty.DisplayMember = "Value";
                 ddAvailabilty.ValueMember = "Key";
                 ddAvailabilty.Items.Clear();
-                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>();
-                availability.Add(OlBusyStatus.olFree, "Free");
-                availability.Add(OlBusyStatus.olBusy, "Busy");
+                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>{
+                    { OlBusyStatus.olFree, "Free" },
+                    { OlBusyStatus.olBusy, "Busy" }
+                };
                 if (profile.SyncDirection.Id != Sync.Direction.OutlookToGoogle.Id && tbTargetCalendar.Text != "Google calendar") {
                     availability.Add(OlBusyStatus.olTentative, "Tentative");
                     availability.Add(OlBusyStatus.olOutOfOffice, "Out of Office");
@@ -1180,7 +1182,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 OverwritePrompt = true
             };
             if (exportFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Exporting settings to " + exportFile.FileName);
+                log.Info("Exporting settings.");
                 Settings.Instance.Save(exportFile.FileName);
             }
         }
@@ -1193,7 +1195,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 Multiselect = false
             };
             if (importFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Importing settings from " + importFile.FileName);
+                log.Info("Importing settings.");
                 Settings.Load(importFile.FileName);
                 updateGUIsettings();
                 this.ActiveCalendarProfile.InitialiseTimer();

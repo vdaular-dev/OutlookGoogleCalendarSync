@@ -1194,11 +1194,14 @@ namespace OutlookGoogleCalendarSync.Outlook {
                     if (oApp == null)
                         throw new ApplicationException("GetActiveObject() returned NULL without throwing an error.");
                 } catch (System.Exception ex) {
-                    if (Outlook.Errors.HandleComError(ex) == Outlook.Errors.ErrorType.Unavailable) { //MK_E_UNAVAILABLE
+                    if (ex is ApplicationException) {
+                        log.Warn(ex.Message);
+                    } else if (ex is ArgumentNullException) {
+                        log.Warn("Attachment failed - Marshal.GetActiveObject() not available. Wrong .NET Framework?");
+                    } else if (Outlook.Errors.HandleComError(ex) == Outlook.Errors.ErrorType.Unavailable) { //MK_E_UNAVAILABLE
                         log.Warn("Attachment failed - Outlook is running without GUI for programmatic access.");
                     } else {
-                        log.Warn("Attachment failed.");
-                        Ogcs.Exception.Analyse(ex);
+                        ex.Analyse("Attachment failed.");
                     }
                     if (openOutlookOnFail) openOutlookHandler(ref oApp, withSystemCall);
                 }

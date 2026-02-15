@@ -68,7 +68,6 @@ namespace OutlookGoogleCalendarSync {
                 Forms.Splash.ShowMe();
 
                 SettingsStore.Upgrade.Check();
-                log.Debug("Loading settings from file.");
                 Settings.Load();
                 Settings.Instance.Proxy.Configure();
 
@@ -437,6 +436,10 @@ namespace OutlookGoogleCalendarSync {
                 log.Warn("Cannot move user files when OGCS is started with CLI arguments.");
                 return;
             }
+            if (IsInstalled) {
+                log.Warn("Cannot move user files when OGCS is installed.");
+                return;
+            }
 
             if (portable) {
                 log.Info("Making the application portable...");
@@ -461,7 +464,7 @@ namespace OutlookGoogleCalendarSync {
         }
 
         private static void moveFiles(string srcDir, string dstDir) {
-            log.Info("Moving files from " + srcDir + " to " + dstDir + ":-");
+            log.Info("Moving files from " + MaskFilePath(srcDir) + " to " + MaskFilePath(dstDir) + ":-");
             if (!Directory.Exists(dstDir)) Directory.CreateDirectory(dstDir);
 
             string dstFile = Path.Combine(dstDir, Settings.ConfigFilename);

@@ -178,6 +178,9 @@ namespace OutlookGoogleCalendarSync {
         </script>
         <script>
             function mp(payload) {
+                /* WebBrowser control is too old (IE7) to handle GA4 JavaScript
+                 * WebView2 should work, but meanwhile,
+                 * Workaround is to use the ScriptBridge() class
                 fetch('https://www.google-analytics.com/mp/collect?api_secret=kWOsAm2tQny1xOjiwMyC5Q&measurement_id=G-S6RMS8GHEE', {
                     mode: 'no-cors',
                     method: 'POST',
@@ -186,9 +189,10 @@ namespace OutlookGoogleCalendarSync {
                         'Content-Type': 'application/json'
                     },
                     body: payload
-                    })
+                })
                .then(response => response.json())
                .then(response => console.log(JSON.stringify(response)));
+               */
             }
         </script>
         <script>
@@ -223,6 +227,7 @@ namespace OutlookGoogleCalendarSync {
         public Console(WebBrowser wb) {
             if (this.wb != null) return;
             this.wb = wb;
+            wb.ObjectForScripting = new ScriptBridge();
 
             if (Program.InDeveloperMode)
                 wb.IsWebBrowserContextMenuEnabled = true;
@@ -285,19 +290,21 @@ namespace OutlookGoogleCalendarSync {
         }
 
         private void awaitRefresh() {
-            while (this.awaitingRefresh && !isCleared()) {
+            while (this.awaitingRefresh && !IsCleared) {
                 System.Windows.Forms.Application.DoEvents();
                 System.Threading.Thread.Sleep(100);
             }
             this.awaitingRefresh = false;
         }
 
-        private Boolean isCleared() {
-            return (this.wb.DocumentText == "<HTML></HTML>\0" || this.wb.DocumentText == header + footer);
+        public Boolean IsCleared {
+            get {
+                return (this.DocumentText == "<HTML></HTML>\0" || this.DocumentText == header + footer);
+            }
         }
 
         public void Clear() {
-            if (isCleared()) return;
+            if (IsCleared) return;
 
             content = header + footer;
             awaitingRefresh = true;
@@ -579,6 +586,13 @@ namespace OutlookGoogleCalendarSync {
             }
             log.Debug("Done");
             */
+        }
+    }
+
+    [System.Runtime.InteropServices.ComVisible(true)]
+    public class ScriptBridge {
+        public void SendAnalytics(string payload) {
+            Telemetry.GA4Event.Send(payload);
         }
     }
 }
