@@ -405,7 +405,13 @@ namespace OutlookGoogleCalendarSync.Google {
             foreach (Event ev in result) {
                 if ((ev.Recurrence?.Count() ?? 0) == 0) continue;
                 Dictionary<String, String> rules = Recurrence.ExplodeRrule(ev.Recurrence);
-                if (rules.ContainsKey("UNTIL")) {
+                if (rules == null) {
+                    Forms.Main.Instance.Console.Update(
+                        GetEventSummary("The following Google Event does not have <a href='https://bit.ly/no-rrule-present'>" +
+                        "a valid RRULE</a> present and cannot be synced properly:-<br/>",
+                        ev, out String anonSummary, appendContext: false), anonSummary, Console.Markup.warning
+                    );
+                } else if (rules.ContainsKey("UNTIL")) {
                     System.DateTime endDate = Recurrence.EndDate(rules["UNTIL"], ev.End.TimeZone);
                     if (endDate < from)
                         historicRecurring.Add(ev);
