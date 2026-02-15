@@ -196,7 +196,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             cbStartInTray.Checked = Settings.Instance.StartInTray;
             cbMinimiseToTray.Checked = Settings.Instance.MinimiseToTray;
             cbMinimiseNotClose.Checked = Settings.Instance.MinimiseNotClose;
-            cbPortable.Checked = Settings.Instance.Portable;
+            cbPortable.Checked = Settings.Instance.Portable && !Program.IsInstalled;
             cbPortable.Enabled = !Program.IsInstalled;
             #region Logging
             for (int i = 0; i < cbLoggingLevel.Items.Count; i++) {
