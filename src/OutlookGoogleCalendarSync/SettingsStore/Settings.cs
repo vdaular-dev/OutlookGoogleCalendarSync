@@ -398,8 +398,25 @@ namespace OutlookGoogleCalendarSync {
                 OverwritePrompt = true
             };
             if (exportFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Exporting settings to " + exportFile.FileName);
+                log.Info("Exporting settings.");
                 Settings.Instance.Save(exportFile.FileName);
+                return true;
+            } else return false;
+        }
+
+        public Boolean Import() {
+            OpenFileDialog importFile = new OpenFileDialog {
+                Title = "Import OGCS Settings from File",
+                Filter = "XML File|*.xml|All Files|*",
+                DefaultExt = "xml",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+            if (importFile.ShowDialog() == DialogResult.OK) {
+                log.Info("Importing settings.");
+                Settings.Load(importFile.FileName);
+                Forms.Main.Instance.ActiveCalendarProfile.InitialiseTimer();
+                Settings.Instance.Calendars.ForEach(cal => { cal.InitialiseTimer(); cal.RegisterForPushSync(); });
                 return true;
             } else return false;
         }

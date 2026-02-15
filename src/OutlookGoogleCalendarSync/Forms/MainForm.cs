@@ -1190,19 +1190,8 @@ namespace OutlookGoogleCalendarSync.Forms {
             Settings.Instance.Export("OGCS_v" + Settings.Instance.Version + ".xml");
         }
         private void miImportSettings_Click(object sender, EventArgs e) {
-            OpenFileDialog importFile = new OpenFileDialog {
-                Title = "Import OGCS Settings from File",
-                Filter = "XML File|*.xml|All Files|*",
-                DefaultExt = "xml",
-                CheckFileExists = true,
-                Multiselect = false
-            };
-            if (importFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Importing settings.");
-                Settings.Load(importFile.FileName);
+            if (Settings.Instance.Import()) {
                 updateGUIsettings();
-                this.ActiveCalendarProfile.InitialiseTimer();
-                Settings.Instance.Calendars.ForEach(cal => { cal.InitialiseTimer(); cal.RegisterForPushSync(); });
             }
         }
         #endregion
