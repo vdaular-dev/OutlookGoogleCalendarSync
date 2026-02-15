@@ -247,9 +247,23 @@ namespace OutlookGoogleCalendarSync.Outlook {
                                     ExcludedByCategory.Add(ai.EntryID, CustomProperty.Get(ai, CustomProperty.MetadataId.gEventID, profile)); continue;
                                 } catch (System.ArgumentException ex) {
                                     if (ex.Message == "An item with the same key has already been added.") {
-                                        log.Warn("Investigating issue #2233 and duplicate EntryID...");
+                                        ex.Analyse("Investigating issue #2233 and duplicate EntryID...", true);
                                         try {
+                                            log.Debug("Errored item: " + ai.EntryID);
+                                            log.Debug(GetEventSummary(ai));
+                                            log.Debug("ExcludedByCategory.Count: "+ ExcludedByCategory.Count);
+                                            log.Debug("ExcludedByCategory.ContainsKey: " + ExcludedByCategory.ContainsKey(ai.EntryID));
                                             List<AppointmentItem> ais = new();
+                                            IOutlook.FilterItems(OutlookItems, filter)
+                                                .FindAll(x => (x as AppointmentItem).EntryID == ai.EntryID)
+                                                .ForEach(y => ais.Add(y as AppointmentItem));
+                                            log.Debug("Simple search found: " + ais.Count);
+                                            ais.ForEach(x => {
+                                                log.Debug("   -> " + x.GlobalAppointmentID);
+                                                log.Debug("      " + GetEventSummary(x));
+                                            });
+                                            
+                                            ais = new();
                                             IOutlook.FilterItems(OutlookItems, filter).ForEach(ai => ais.Add(ai as AppointmentItem));
                                             ExportToCSV("Appointments containing possible duplicate EntryID", "outlook_appointments_duplicateEntryID.csv", ais);
 
@@ -967,8 +981,8 @@ namespace OutlookGoogleCalendarSync.Outlook {
                     try {
                         CustomProperty.LogProperties(ai, Program.MyFineLevel);
 
-                        //Find entries with no Google ID
-                        if (!CustomProperty.Exists(ai, CustomProperty.MetadataId.gEventID)) {
+                        //Find entries with no Google ID (that haven't been locally copied)
+                        if (!CustomProperty.Exists(ai, CustomProperty.MetadataId.gEventID) && !CustomProperty.Exists(ai, CustomProperty.MetadataId.locallyCopied)) {
                             String sigAi = signature(ai);
                             unclaimedAi.Add(ai);
 
@@ -1203,11 +1217,14 @@ namespace OutlookGoogleCalendarSync.Outlook {
                     if (oApp == null)
                         throw new ApplicationException("GetActiveObject() returned NULL without throwing an error.");
                 } catch (System.Exception ex) {
-                    if (Outlook.Errors.HandleComError(ex) == Outlook.Errors.ErrorType.Unavailable) { //MK_E_UNAVAILABLE
+                    if (ex is ApplicationException) {
+                        log.Warn(ex.Message);
+                    } else if (ex is ArgumentNullException) {
+                        log.Warn("Attachment failed - Marshal.GetActiveObject() not available. Wrong .NET Framework?");
+                    } else if (Outlook.Errors.HandleComError(ex) == Outlook.Errors.ErrorType.Unavailable) { //MK_E_UNAVAILABLE
                         log.Warn("Attachment failed - Outlook is running without GUI for programmatic access.");
                     } else {
-                        log.Warn("Attachment failed.");
-                        Ogcs.Exception.Analyse(ex);
+                        ex.Analyse("Attachment failed.");
                     }
                     if (openOutlookOnFail) openOutlookHandler(ref oApp, withSystemCall);
                 }
@@ -1704,7 +1721,9 @@ namespace OutlookGoogleCalendarSync.Outlook {
                 //Don't delete any items that aren't yet in Google or just created in Google during this sync
                 for (int o = outlook.Count - 1; o >= 0; o--) {
                     if (!CustomProperty.Exists(outlook[o], CustomProperty.MetadataId.gEventID) ||
-                        outlook[o].LastModificationTime > Sync.Engine.Instance.SyncStarted)
+                        CustomProperty.GetOGCSlastModified(outlook[o]) > Sync.Engine.Instance.SyncStarted)
+                        //OGCSlastModified must be used, not LastModificationTime, as the latter may inexplicably (Exchange caching?) be prior to the sync start
+                        //Evidenced by issue #2268
                         outlook.Remove(outlook[o]);
                 }
             }

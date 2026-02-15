@@ -201,7 +201,7 @@ namespace OutlookGoogleCalendarSync.Google {
                     rrule = aRule;
                 }
                 if (rrule.StartsWith("RRULE:")) {
-                    log.Debug("Converting " + rrule);
+                    log.Fine("Converting " + rrule);
                     String[] rrules = rrule.TrimStart("RRULE:".ToCharArray()).Split(';');
                     Dictionary<String, String> rules = new Dictionary<String, String>();
                     for (int r = 0; r < rrules.Count(); r++) {

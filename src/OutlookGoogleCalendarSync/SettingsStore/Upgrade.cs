@@ -56,13 +56,13 @@ namespace OutlookGoogleCalendarSync.SettingsStore {
 
             String backupFile = "";
             try {
-                log.Info("Backing up '" + Settings.ConfigFile + "' for v" + settingsVersion);
+                log.Info("Backing up '" + Program.MaskFilePath(Settings.ConfigFile) + "' for v" + settingsVersion);
                 backupFile = System.Text.RegularExpressions.Regex.Replace(Settings.ConfigFile, @"(\.\w+)$", "-v" + settingsVersion + "$1");
                 File.Copy(Settings.ConfigFile, backupFile, false);
-                log.Info(backupFile + " created.");
+                log.Info(Program.MaskFilePath(backupFile) + " created.");
             } catch (System.IO.IOException ex) {
                 if (ex.GetErrorCode() == "0x80070050") { //File already exists
-                    log.Warn("The backfile already exists, not overwriting " + backupFile);
+                    log.Warn("The backfile already exists, not overwriting " + Program.MaskFilePath(backupFile));
                 }
             } catch (System.Exception ex) {
                 ex.Analyse("Failed to create backup settings file");

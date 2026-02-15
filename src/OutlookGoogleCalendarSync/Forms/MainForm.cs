@@ -23,7 +23,6 @@ namespace OutlookGoogleCalendarSync.Forms {
 
         private static readonly ILog log = LogManager.GetLogger(typeof(Main));
         private Rectangle tabAppSettings_background = new Rectangle();
-        private float magnification = Graphics.FromHwnd(IntPtr.Zero).DpiY / 96; //Windows Display Magnifier (96DPI = 100%)
         public Boolean LoadingProfileConfig { get; private set; }
 
         public Main(string startingTab = null) {
@@ -164,7 +163,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             #endregion
 
             #region Profile
-            log.Debug("Loading profiles.");
+            log.Debug($"Loading {Settings.Instance.Calendars.Count} profiles.");
             gbOutlook_ClassicClient.Text = "Office Outlook \'Classic\' Client";
             gbOutlook_ClassicClient.Enabled = !Outlook.Factory.NoClient();
             if (!gbOutlook_ClassicClient.Enabled) {
@@ -225,7 +224,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             cbStartInTray.Checked = Settings.Instance.StartInTray;
             cbMinimiseToTray.Checked = Settings.Instance.MinimiseToTray;
             cbMinimiseNotClose.Checked = Settings.Instance.MinimiseNotClose;
-            cbPortable.Checked = Settings.Instance.Portable;
+            cbPortable.Checked = Settings.Instance.Portable && !Program.IsInstalled;
             cbPortable.Enabled = !Program.IsInstalled;
             #region Logging
             for (int i = 0; i < cbLoggingLevel.Items.Count; i++) {
@@ -461,7 +460,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     cbExcludeGoals.Checked = profile.ExcludeGoals;
                     cbExcludeGoals.Enabled = Ogcs.Google.Calendar.IsDefaultCalendar() ?? true;
                     cbAddGMeet.Checked = profile.AddGMeet;
-                    
+
                     if (Settings.Instance.UsingPersonalAPIkeys()) {
                         cbShowDeveloperOptions.Checked = true;
                         tbClientID.Text = Settings.Instance.PersonalClientIdentifier;
@@ -509,9 +508,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                     ddPrivacy.DisplayMember = "Value";
                     ddPrivacy.ValueMember = "Key";
                     ddPrivacy.Items.Clear();
-                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>();
-                    privacy.Add(OlSensitivity.olPrivate, "Private");
-                    privacy.Add(OlSensitivity.olNormal, "Public");
+                    Dictionary<OlSensitivity, String> privacy = new Dictionary<OlSensitivity, String>{
+                        { OlSensitivity.olPrivate, "Private" },
+                        { OlSensitivity.olNormal, "Public" } 
+                    };
                     ddPrivacy.DataSource = new BindingSource(privacy, null);
                     ddPrivacy.SelectedValue = Enum.Parse(typeof(OlSensitivity), profile.PrivacyLevel);
 
@@ -708,9 +708,10 @@ namespace OutlookGoogleCalendarSync.Forms {
                 ddAvailabilty.DisplayMember = "Value";
                 ddAvailabilty.ValueMember = "Key";
                 ddAvailabilty.Items.Clear();
-                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>();
-                availability.Add(OlBusyStatus.olFree, "Free");
-                availability.Add(OlBusyStatus.olBusy, "Busy");
+                Dictionary<OlBusyStatus, String> availability = new Dictionary<OlBusyStatus, String>{
+                    { OlBusyStatus.olFree, "Free" },
+                    { OlBusyStatus.olBusy, "Busy" }
+                };
                 if (profile.SyncDirection.Id != Sync.Direction.OutlookToGoogle.Id && tbTargetCalendar.Text != "Google calendar") {
                     availability.Add(OlBusyStatus.olTentative, "Tentative");
                     availability.Add(OlBusyStatus.olOutOfOffice, "Out of Office");
@@ -1197,7 +1198,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 Multiselect = false
             };
             if (importFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Importing settings from " + importFile.FileName);
+                log.Info("Importing settings.");
                 Settings.Load(importFile.FileName);
                 updateGUIsettings();
                 this.ActiveCalendarProfile.InitialiseTimer();
@@ -1284,7 +1285,7 @@ namespace OutlookGoogleCalendarSync.Forms {
         #endregion
 
         private void groupboxSizing(GroupBox section, PictureBox sectionImage, Boolean? expand = null) {
-            int minSectionHeight = Convert.ToInt16(22 * magnification);
+            int minSectionHeight = Convert.ToInt16(22 * Program.Magnification);
             Boolean expandSection = expand ?? section.Height - minSectionHeight <= 5;
             if (expandSection) {
                 if (!(expand ?? false)) sectionImage.Image.RotateFlip(RotateFlipType.Rotate90FlipNone);
@@ -1305,7 +1306,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     case "Logging": section.Height = 125; break;
                     case "Proxy": section.Height = 197; break;
                 }
-                section.Height = Convert.ToInt16(section.Height * magnification);
+                section.Height = Convert.ToInt16(section.Height * Program.Magnification);
             } else {
                 if (section.Height > minSectionHeight)
                     sectionImage.Image.RotateFlip(RotateFlipType.Rotate270FlipNone);
@@ -1320,21 +1321,21 @@ namespace OutlookGoogleCalendarSync.Forms {
                 pbExpandOutlookDate.Top = gbOutlook_ODate.Top - Convert.ToInt16(2 * magnification);
 
             } else if ("pbExpandGoogleAccount|pbExpandGoogleConfig|pbExpandGoogleOauth".Contains(sectionImage.Name)) {
-                gbGoogle_GConfig.Top = gbGoogle_GAccount.Location.Y + gbGoogle_GAccount.Height + Convert.ToInt16(10 * magnification);
-                pbExpandGoogleConfig.Top = gbGoogle_GConfig.Top - Convert.ToInt16(2 * magnification);
-                cbShowDeveloperOptions.Top = gbGoogle_GConfig.Location.Y + gbGoogle_GConfig.Height + Convert.ToInt16(5 * magnification);
-                gbGoogle_GOAuth.Top = cbShowDeveloperOptions.Location.Y + cbShowDeveloperOptions.Height + Convert.ToInt16(5 * magnification);
-                pbExpandGoogleOauth.Top = gbGoogle_GOAuth.Top - Convert.ToInt16(2 * magnification);
+                gbGoogle_GConfig.Top = gbGoogle_GAccount.Location.Y + gbGoogle_GAccount.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandGoogleConfig.Top = gbGoogle_GConfig.Top - Convert.ToInt16(2 * Program.Magnification);
+                cbShowDeveloperOptions.Top = gbGoogle_GConfig.Location.Y + gbGoogle_GConfig.Height + Convert.ToInt16(5 * Program.Magnification);
+                gbGoogle_GOAuth.Top = cbShowDeveloperOptions.Location.Y + cbShowDeveloperOptions.Height + Convert.ToInt16(5 * Program.Magnification);
+                pbExpandGoogleOauth.Top = gbGoogle_GOAuth.Top - Convert.ToInt16(2 * Program.Magnification);
 
             } else if ("pbExpandHow|pbExpandWhen|pbExpandWhat".Contains(sectionImage.Name)) {
-                gbSyncOptions_When.Top = gbSyncOptions_How.Location.Y + gbSyncOptions_How.Height + Convert.ToInt16(10 * magnification);
-                pbExpandWhen.Top = gbSyncOptions_When.Top - Convert.ToInt16(2 * magnification);
-                gbSyncOptions_What.Top = gbSyncOptions_When.Location.Y + gbSyncOptions_When.Height + Convert.ToInt16(10 * magnification);
-                pbExpandWhat.Top = gbSyncOptions_What.Top - Convert.ToInt16(2 * magnification);
+                gbSyncOptions_When.Top = gbSyncOptions_How.Location.Y + gbSyncOptions_How.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandWhen.Top = gbSyncOptions_When.Top - Convert.ToInt16(2 * Program.Magnification);
+                gbSyncOptions_What.Top = gbSyncOptions_When.Location.Y + gbSyncOptions_When.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandWhat.Top = gbSyncOptions_What.Top - Convert.ToInt16(2 * Program.Magnification);
 
             } else if ("pbExpandLogging|pbExpandProxy".Contains(sectionImage.Name)) {
-                gbAppBehaviour_Proxy.Top = gbAppBehaviour_Logging.Location.Y + gbAppBehaviour_Logging.Height + Convert.ToInt16(10 * magnification);
-                pbExpandProxy.Top = gbAppBehaviour_Proxy.Top - Convert.ToInt16(2 * magnification);
+                gbAppBehaviour_Proxy.Top = gbAppBehaviour_Logging.Location.Y + gbAppBehaviour_Logging.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandProxy.Top = gbAppBehaviour_Proxy.Top - Convert.ToInt16(2 * Program.Magnification);
             }
         }
 
@@ -2047,7 +2048,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 lDNDand.Visible = true;
                 cbSingleCategoryOnly.Visible = true;
                 lExcludeItems.Text = "Exclude items. Affects newly synced items:-";
-                lWhatExcludeInfo.Left = 207;
+                lWhatExcludeInfo.Left = Convert.ToInt16(230 * Program.Magnification);
                 cbExcludeTentative.Visible = true;
             } else {
                 cbObfuscateDirection.Enabled = false;
@@ -2059,7 +2060,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     tbTargetCalendar.SelectedIndex = 1;
                 tbTargetCalendar.Enabled = false;
                 lExcludeItems.Text = "Exclude items. Affects those previously synced:-";
-                lWhatExcludeInfo.Left = 228;
+                lWhatExcludeInfo.Left = Convert.ToInt16(248 * Program.Magnification);
             }
             if (ActiveCalendarProfile.SyncDirection.Id == Sync.Direction.GoogleToOutlook.Id) {
                 ActiveCalendarProfile.DeregisterForPushSync();
@@ -2123,8 +2124,8 @@ namespace OutlookGoogleCalendarSync.Forms {
             groupboxSizing(gbSyncOptions_How, pbExpandHow, true);
         }
         private void gbSyncOptions_HowExpand(Boolean show, Int16 newHeight) {
-            int minPanelHeight = Convert.ToInt16(50 * magnification);
-            int maxPanelHeight = Convert.ToInt16(newHeight * magnification);
+            int minPanelHeight = Convert.ToInt16(50 * Program.Magnification);
+            int maxPanelHeight = Convert.ToInt16(newHeight * Program.Magnification);
             this.gbSyncOptions_How.BringToFront();
             if (show) {
                 while (this.gbSyncOptions_How.Height < maxPanelHeight) {
@@ -2133,7 +2134,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     System.Threading.Thread.Sleep(1);
                 }
                 this.gbSyncOptions_How.Height = maxPanelHeight;
-                this.gbSyncOptions_What.Height = 20;
+                this.gbSyncOptions_What.Height = Convert.ToInt16(20 * Program.Magnification);
             } else {
                 while (this.gbSyncOptions_How.Height > minPanelHeight && this.Visible) {
                     this.gbSyncOptions_How.Height -= 2;
@@ -2141,7 +2142,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                     System.Threading.Thread.Sleep(1);
                 }
                 this.gbSyncOptions_How.Height = minPanelHeight;
-                this.gbSyncOptions_What.Height = 112;
+                this.gbSyncOptions_What.Height = Convert.ToInt16(112 * Program.Magnification);
             }
         }
 

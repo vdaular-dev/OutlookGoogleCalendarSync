@@ -783,6 +783,10 @@ namespace OutlookGoogleCalendarSync.Google {
                 Outlook.CustomProperty.SetOGCSlastModified(ref ai);
                 ai.Save();
             }
+            if (Outlook.CustomProperty.Exists(ai, Outlook.CustomProperty.MetadataId.locallyCopied)) {
+                Outlook.CustomProperty.Remove(ref ai, Outlook.CustomProperty.MetadataId.locallyCopied);
+                ai.Save();
+            }
 
             if (profile.AddGMeet && Outlook.GMeet.BodyHasGmeetUrl(ai)) {
                 log.Info("Adding GMeet conference details.");
@@ -1023,7 +1027,11 @@ namespace OutlookGoogleCalendarSync.Google {
             }
 
             if (profile.AddAttendees && ai.Recipients.Count > 1 && !APIlimitReached_attendee) {
-                if (ai.Recipients.Count > profile.MaxAttendees) {
+                if (!(ev.Organizer.Self ?? false)) {
+                    log.Debug("The organiser of the Google event is someone else; won't meddle with attendees.");
+                    //Attendee properties cannot be updated anyway, only attendees added, which is most likely unintended behaviour (eg due to cloaking).
+
+                } else if (ai.Recipients.Count > profile.MaxAttendees) {
                     log.Warn("This Outlook appointment has " + ai.Recipients.Count + " attendees, more than the user configured maximum.");
                     if (ai.Recipients.Count >= 200) {
                         Forms.Main.Instance.Console.Update(aiSummary + "<br/>Attendees will not be synced for this meeting as it has " +
@@ -1630,7 +1638,7 @@ namespace OutlookGoogleCalendarSync.Google {
                 //Don't delete any items that aren't yet in Outlook or just created in Outlook during this sync
                 for (int g = google.Count - 1; g >= 0; g--) {
                     if (!CustomProperty.Exists(google[g], CustomProperty.MetadataId.oEntryId) ||
-                        google[g].UpdatedDateTimeOffset > Sync.Engine.Instance.SyncStarted)
+                        CustomProperty.GetOGCSlastModified(google[g]) > Sync.Engine.Instance.SyncStarted)
                         google.Remove(google[g]);
                 }
             }
@@ -1726,7 +1734,7 @@ namespace OutlookGoogleCalendarSync.Google {
                             }
 
                         } else {
-                            log.Fine("EntryID has changed - invite accepted?");
+                            log.Warn("EntryID has changed - invite accepted?");
                             if (SignaturesMatch(Signature(ev), Outlook.Calendar.signature(ai))) {
                                 CustomProperty.AddOutlookIDs(ref ev, ai); //update EntryID
                                 CustomProperty.Add(ref ev, CustomProperty.MetadataId.forceSave, "True");
@@ -1794,7 +1802,7 @@ namespace OutlookGoogleCalendarSync.Google {
                             }
 
                             //Response
-                            if (attendeeIdentifier == Settings.Instance.GaccountEmail) {
+                            if (attendee.Self ?? false) {
                                 log.Fine("The Outlook attendee is the Google organiser, therefore not touching response status.");
                                 break;
                             } else if (ai.Organizer == attendeeIdentifier) {

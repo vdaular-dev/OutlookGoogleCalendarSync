@@ -218,7 +218,7 @@ namespace OutlookGoogleCalendarSync.Sync {
                         String syncStats = $"<div style='color: grey; font-size: 11px'>{duration}<br/>Syncs completed: {Settings.Instance.CompletedSyncs}";
                         if (!Settings.Instance.UserIsBenefactor()) {
                             syncStats += $"<br/><a href='{Program.OgcsWebsite}/donate?id=" + Extensions.OgcsString.ToBase64String(Settings.Instance.GaccountEmail) + 
-                                "' onClick='javascript:mp(donateEvent)' style='color: grey'>Donate</a></font>";
+                                "' onClick='javascript:window.external.SendAnalytics(donateEvent);' style='color: grey'>Donate</a>";
                             Telemetry.GA4Event donateEvent = new(Telemetry.GA4Event.Event.Name.donate, out Telemetry.GA4Event.Event eventData);
                             eventData
                                 .AddParameter("source", "console")
