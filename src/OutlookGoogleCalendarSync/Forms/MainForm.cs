@@ -1315,10 +1315,10 @@ namespace OutlookGoogleCalendarSync.Forms {
             sectionImage.Refresh();
 
             if ("pbExpandOutlookAccount|pbExpandOutlookConfig|pbExpandOutlookDate".Contains(sectionImage.Name)) { //|pbExpandGoogleOauth
-                gbOutlook_OConfig.Top = gbOutlook_OAccount.Location.Y + gbOutlook_OAccount.Height + Convert.ToInt16(10 * magnification);
-                pbExpandOutlookConfig.Top = gbOutlook_OConfig.Top - Convert.ToInt16(2 * magnification); 
-                gbOutlook_ODate.Top = gbOutlook_OConfig.Location.Y + gbOutlook_OConfig.Height + Convert.ToInt16(10 * magnification);
-                pbExpandOutlookDate.Top = gbOutlook_ODate.Top - Convert.ToInt16(2 * magnification);
+                gbOutlook_OConfig.Top = gbOutlook_OAccount.Location.Y + gbOutlook_OAccount.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandOutlookConfig.Top = gbOutlook_OConfig.Top - Convert.ToInt16(2 * Program.Magnification); 
+                gbOutlook_ODate.Top = gbOutlook_OConfig.Location.Y + gbOutlook_OConfig.Height + Convert.ToInt16(10 * Program.Magnification);
+                pbExpandOutlookDate.Top = gbOutlook_ODate.Top - Convert.ToInt16(2 * Program.Magnification);
 
             } else if ("pbExpandGoogleAccount|pbExpandGoogleConfig|pbExpandGoogleOauth".Contains(sectionImage.Name)) {
                 gbGoogle_GConfig.Top = gbGoogle_GAccount.Location.Y + gbGoogle_GAccount.Height + Convert.ToInt16(10 * Program.Magnification);
@@ -1380,9 +1380,9 @@ namespace OutlookGoogleCalendarSync.Forms {
                 gbOutlook_Online.Height = 40;
                 gbOutlook_OAccount.Height = 368;
             }
-            gbOutlook_ClassicClient.Top = gbOutlook_Online.Location.Y + gbOutlook_Online.Height + Convert.ToInt16(10 * magnification);
-            lOutlookCalendar.Top = gbOutlook_ClassicClient.Location.Y + gbOutlook_ClassicClient.Height + Convert.ToInt16(9 * magnification);
-            cbOutlookCalendars.Top = gbOutlook_ClassicClient.Location.Y + gbOutlook_ClassicClient.Height + Convert.ToInt16(5 * magnification);
+            gbOutlook_ClassicClient.Top = gbOutlook_Online.Location.Y + gbOutlook_Online.Height + Convert.ToInt16(10 * Program.Magnification);
+            lOutlookCalendar.Top = gbOutlook_ClassicClient.Location.Y + gbOutlook_ClassicClient.Height + Convert.ToInt16(9 * Program.Magnification);
+            cbOutlookCalendars.Top = gbOutlook_ClassicClient.Location.Y + gbOutlook_ClassicClient.Height + Convert.ToInt16(5 * Program.Magnification);
             groupboxSizing(gbOutlook_OAccount, pbExpandOutlookAccount, true);
 
             if (!Settings.AreApplied) return;
