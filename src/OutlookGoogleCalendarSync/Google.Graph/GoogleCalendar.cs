@@ -1547,7 +1547,6 @@ namespace OutlookGoogleCalendarSync.Google.Graph {
         /// </summary>
         /// <param name="oSensitivity">Outlook's current setting</param>
         /// <param name="gVisibility">Google's current setting</param>
-        /// <param name="direction">Direction of sync</param>
         private static String getPrivacy(Microsoft.Graph.Sensitivity? oSensitivity, String gVisibility) {
             SettingsStore.Calendar profile = Sync.Engine.Calendar.Instance.Profile;
             oSensitivity ??= Microsoft.Graph.Sensitivity.Normal;
@@ -1555,22 +1554,26 @@ namespace OutlookGoogleCalendarSync.Google.Graph {
             if (!profile.SetEntriesPrivate)
                 return (oSensitivity == Microsoft.Graph.Sensitivity.Normal) ? "default" : "private";
 
-            if (profile.SyncDirection.Id != Sync.Direction.Bidirectional.Id) {
-                return (profile.PrivacyLevel == Microsoft.Graph.Sensitivity.Private.ToString()) ? "private" : "public";
+            String overridePrivacy = "public";
+            Microsoft.Graph.Sensitivity olOverridePrivacy = Microsoft.Graph.Sensitivity.Normal;
+            if (!Enum.TryParse(Regex.Replace(profile.PrivacyLevel, "^ol", ""), out olOverridePrivacy))
+                log.Error("Could not convert string '" + profile.PrivacyLevel + "' to Graph.Sensitivity type. Defaulting override to normal.");
+            overridePrivacy = olOverridePrivacy == Microsoft.Graph.Sensitivity.Private ? "private" : "public";
+
+            if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Privacy enforcement is in other direction
+                if (gVisibility == null)
+                    return (oSensitivity == Microsoft.Graph.Sensitivity.Normal) ? "default" : "private";
+                else if (!profile.CreatedItemsOnly && (oSensitivity != olOverridePrivacy)) {
+                    log.Warn("Outlook privacy override has been manually altered - so syncing this back.");
+                    return (oSensitivity == Microsoft.Graph.Sensitivity.Normal) ? "default" : "private";
+                } else
+                    return gVisibility;
             } else {
-                if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Privacy enforcement is in other direction
-                    if (gVisibility == null)
-                        return (oSensitivity == Microsoft.Graph.Sensitivity.Normal) ? "default" : "private";
-                    else if (gVisibility == "private" && oSensitivity != Microsoft.Graph.Sensitivity.Private) {
-                        log.Fine("Source of truth for privacy is already set private and target is NOT - so syncing this back.");
-                        return "default";
-                    } else
-                        return gVisibility;
-                } else {
-                    if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gVisibility == null))
-                        return (profile.PrivacyLevel == Microsoft.Graph.Sensitivity.Private.ToString()) ? "private" : "public";
-                    else
-                        return (oSensitivity == Microsoft.Graph.Sensitivity.Normal) ? "default" : "private";
+                if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gVisibility == null))
+                    return overridePrivacy;
+                else {
+                    if (profile.CreatedItemsOnly) return gVisibility;
+                    else return overridePrivacy;
                 }
             }
         }
@@ -1587,29 +1590,27 @@ namespace OutlookGoogleCalendarSync.Google.Graph {
             if (!profile.SetEntriesAvailable)
                 return (oBusyStatus == Microsoft.Graph.FreeBusyStatus.Free) ? "transparent" : "opaque";
 
-            String overrideTransparency = "transparent";
-            Microsoft.Graph.FreeBusyStatus fbStatus = Microsoft.Graph.FreeBusyStatus.Free;
-            try {
-                Enum.TryParse(profile.AvailabilityStatus, out fbStatus);
-                if (fbStatus != Microsoft.Graph.FreeBusyStatus.Free)
-                    overrideTransparency = "opaque";
-            } catch (System.Exception ex) {
-                ex.Analyse("Could not convert string '" + profile.AvailabilityStatus + "' to FreeBusyStatus type. Defaulting override to available.");
-            }
+            String overrideTransparency = "opaque";
+            Microsoft.Graph.FreeBusyStatus fbStatus = Microsoft.Graph.FreeBusyStatus.Busy;
+            if (!Enum.TryParse(Regex.Replace(profile.AvailabilityStatus, "^ol", ""), out fbStatus))
+                log.Error("Could not convert string '" + profile.AvailabilityStatus + "' to Graph.FreeBusyStatus type. Defaulting override to busy.");
+            if (fbStatus == Microsoft.Graph.FreeBusyStatus.Free)
+                overrideTransparency = "transparent";
 
-            if (profile.SyncDirection.Id != Sync.Direction.Bidirectional.Id) {
-                return overrideTransparency;
+            if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Availability enforcement is in other direction
+                if (gTransparency == null)
+                    return (oBusyStatus == Microsoft.Graph.FreeBusyStatus.Free) ? "transparent" : "opaque";
+                else if (!profile.CreatedItemsOnly && (oBusyStatus != fbStatus)) {
+                    log.Warn("Outlook privacy override has been manually altered - so syncing this back.");
+                    return (oBusyStatus == Microsoft.Graph.FreeBusyStatus.Free) ? "transparent" : "opaque";
+                } else
+                    return gTransparency;
             } else {
-                if (profile.TargetCalendar.Id == Sync.Direction.GoogleToOutlook.Id) { //Availability enforcement is in other direction
-                    if (gTransparency == null)
-                        return (oBusyStatus == Microsoft.Graph.FreeBusyStatus.Free) ? "transparent" : "opaque";
-                    else
-                        return gTransparency;
-                } else {
-                    if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gTransparency == null))
-                        return overrideTransparency;
-                    else
-                        return (oBusyStatus == Microsoft.Graph.FreeBusyStatus.Free) ? "transparent" : "opaque";
+                if (!profile.CreatedItemsOnly || (profile.CreatedItemsOnly && gTransparency == null))
+                    return overrideTransparency;
+                else {
+                    if (profile.CreatedItemsOnly) return gTransparency;
+                    else return overrideTransparency;
                 }
             }
         }
