@@ -67,7 +67,6 @@ namespace OutlookGoogleCalendarSync {
                 Forms.Splash.ShowMe();
 
                 SettingsStore.Upgrade.Check();
-                log.Debug("Loading settings from file.");
                 Settings.Load();
                 Settings.Instance.Proxy.Configure();
 

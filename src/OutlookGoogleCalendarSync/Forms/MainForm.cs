@@ -161,7 +161,7 @@ namespace OutlookGoogleCalendarSync.Forms {
             #endregion
 
             #region Profile
-            log.Debug("Loading profiles.");
+            log.Debug($"Loading {Settings.Instance.Calendars.Count} profiles.");
             foreach (SettingsStore.Calendar calendar in Settings.Instance.Calendars) {
                 ddProfile.Items.Add(calendar._ProfileName);
             }
@@ -1183,7 +1183,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 OverwritePrompt = true
             };
             if (exportFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Exporting settings to " + exportFile.FileName);
+                log.Info("Exporting settings.");
                 Settings.Instance.Save(exportFile.FileName);
             }
         }
@@ -1196,7 +1196,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 Multiselect = false
             };
             if (importFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Importing settings from " + importFile.FileName);
+                log.Info("Importing settings.");
                 Settings.Load(importFile.FileName);
                 updateGUIsettings();
                 this.ActiveCalendarProfile.InitialiseTimer();

@@ -333,6 +333,7 @@ namespace OutlookGoogleCalendarSync {
         /// </summary>
         public static void Load(String XMLfile = null) {
             try {
+                log.Info("Loading settings from " + Program.MaskFilePath(XMLfile ?? ConfigFile));
                 Settings.Instance = XMLManager.Import<Settings>(XMLfile ?? ConfigFile);
                 log.Fine("User settings loaded.");
                 Settings.AreLoaded = true;
@@ -372,7 +373,7 @@ namespace OutlookGoogleCalendarSync {
         }
 
         public void Save(String XMLfile = null) {
-            log.Info("Saving settings.");
+            log.Info("Saving settings to " + Program.MaskFilePath(XMLfile ?? ConfigFile));
             XMLManager.Export(this, XMLfile ?? ConfigFile);
         }
 
