@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Windows.Forms;
 
 namespace OutlookGoogleCalendarSync {
     /// <summary>
@@ -375,6 +376,39 @@ namespace OutlookGoogleCalendarSync {
         public void Save(String XMLfile = null) {
             log.Info("Saving settings to " + Program.MaskFilePath(XMLfile ?? ConfigFile));
             XMLManager.Export(this, XMLfile ?? ConfigFile);
+        }
+
+        public Boolean Export(String filename) {
+            SaveFileDialog exportFile = new SaveFileDialog {
+                Title = "Backup OGCS Settings to File",
+                FileName = filename,
+                Filter = "XML File|*.xml|All Files|*",
+                DefaultExt = "xml",
+                AddExtension = true,
+                OverwritePrompt = true
+            };
+            if (exportFile.ShowDialog() == DialogResult.OK) {
+                log.Info("Exporting settings.");
+                Settings.Instance.Save(exportFile.FileName);
+                return true;
+            } else return false;
+        }
+
+        public Boolean Import() {
+            OpenFileDialog importFile = new OpenFileDialog {
+                Title = "Import OGCS Settings from File",
+                Filter = "XML File|*.xml|All Files|*",
+                DefaultExt = "xml",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+            if (importFile.ShowDialog() == DialogResult.OK) {
+                log.Info("Importing settings.");
+                Settings.Load(importFile.FileName);
+                Forms.Main.Instance.ActiveCalendarProfile.InitialiseTimer();
+                Settings.Instance.Calendars.ForEach(cal => { cal.InitialiseTimer(); cal.RegisterForPushSync(); });
+                return true;
+            } else return false;
         }
 
         public Boolean Loading() {

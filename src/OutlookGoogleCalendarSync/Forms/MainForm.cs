@@ -1173,33 +1173,11 @@ namespace OutlookGoogleCalendarSync.Forms {
             }
         }
         private void miExportSettings_Click(object sender, EventArgs e) {
-            SaveFileDialog exportFile = new SaveFileDialog {
-                Title = "Backup OGCS Settings to File",
-                FileName = "OGCS_v" + Settings.Instance.Version + ".xml",
-                Filter = "XML File|*.xml|All Files|*",
-                DefaultExt = "xml",
-                AddExtension = true,
-                OverwritePrompt = true
-            };
-            if (exportFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Exporting settings.");
-                Settings.Instance.Save(exportFile.FileName);
-            }
+            Settings.Instance.Export("OGCS_v" + Settings.Instance.Version + ".xml");
         }
         private void miImportSettings_Click(object sender, EventArgs e) {
-            OpenFileDialog importFile = new OpenFileDialog {
-                Title = "Import OGCS Settings from File",
-                Filter = "XML File|*.xml|All Files|*",
-                DefaultExt = "xml",
-                CheckFileExists = true,
-                Multiselect = false
-            };
-            if (importFile.ShowDialog() == DialogResult.OK) {
-                log.Info("Importing settings.");
-                Settings.Load(importFile.FileName);
+            if (Settings.Instance.Import()) {
                 updateGUIsettings();
-                this.ActiveCalendarProfile.InitialiseTimer();
-                Settings.Instance.Calendars.ForEach(cal => { cal.InitialiseTimer(); cal.RegisterForPushSync(); });
             }
         }
         #endregion
