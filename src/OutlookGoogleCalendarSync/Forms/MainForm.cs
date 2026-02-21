@@ -264,6 +264,7 @@ namespace OutlookGoogleCalendarSync.Forms {
                 (new DateTime(2000, 1, 1).Add(new TimeSpan(TimeSpan.TicksPerDay * System.Reflection.Assembly.GetEntryAssembly().GetName().Version.Build))).Year.ToString());
 
             cbAlphaReleases.Checked = Settings.Instance.AlphaReleases;
+            cbIgnoreSkipPrefs.Visible = !string.IsNullOrEmpty(Settings.Instance.SkipVersion) || !string.IsNullOrEmpty(Settings.Instance.SkipVersion2);
             #endregion
             FeaturesBlockedByCorpPolicy(ActiveCalendarProfile.OutlookGalBlocked);
             this.ResumeLayout();

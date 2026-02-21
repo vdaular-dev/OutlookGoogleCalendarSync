@@ -320,14 +320,18 @@ namespace OutlookGoogleCalendarSync {
             get { return skipVersion; }
             set {
                 skipVersion = value;
-                if (!Loading()) XMLManager.ExportElement(this, "SkipVersion", value, ConfigFile);
+                if (!Loading()) {
+                    XMLManager.ExportElement(this, "SkipVersion", value ?? "", ConfigFile);
+                }
             }
         }
         [DataMember] public String SkipVersion2 {
             get { return skipVersion2; }
             set {
                 skipVersion2 = value;
-                if (!Loading()) XMLManager.ExportElement(this, "SkipVersion2", value, ConfigFile);
+                if (!Loading()) {
+                    XMLManager.ExportElement(this, "SkipVersion2", value ?? "", ConfigFile);
+                }
             }
         }
 
