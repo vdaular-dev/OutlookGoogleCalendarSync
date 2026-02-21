@@ -37,10 +37,17 @@ namespace OutlookGoogleCalendarSync {
             log.Debug((isManualCheck ? "Manual" : "Automatic") + " update check requested.");
             if (isManualCheck) updateButton.Text = "Checking...";
 
+            if (isManualCheck && Forms.Main.Instance.cbIgnoreSkipPrefs.Visible && Forms.Main.Instance.cbIgnoreSkipPrefs.Checked) {
+                log.Info("Resetting any requests to skip versions.");
+                Settings.Instance.SkipVersion = null;
+                Settings.Instance.SkipVersion2 = null;
+            }
+
             try {
                 if (!string.IsNullOrEmpty(nonGitHubReleaseUri) || Program.IsInstalled) {
                     try {
-                        if (await githubCheck()) {
+                        Boolean? updating = await githubCheck();
+                        if (updating ?? false) {
                             log.Info("Restarting OGCS.");
                             try {
                                 System.Diagnostics.Process.Start(restartUpdateExe, "--processStartAndWait OutlookGoogleCalendarSync.exe");
@@ -48,6 +55,13 @@ namespace OutlookGoogleCalendarSync {
                                 Ogcs.Exception.Analyse(ex, true);
                             }
                             Program.Shutdown();
+                        } else {
+                            log.Info("Already running the latest version of OGCS.");
+                            if (this.isManualCheck && updating != null) { //Was a manual check, so give feedback
+                                String beta = "";
+                                if (!Settings.Instance.AlphaReleases && Application.ProductVersion.EndsWith(".0.0")) beta = "beta ";
+                                Ogcs.Extensions.MessageBox.Show($"You are already running the latest {beta}version of OGCS.", "Latest Version", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
                         }
                     } finally {
                         if (isManualCheck) updateButton.Text = "Check For Update";
@@ -71,6 +85,10 @@ namespace OutlookGoogleCalendarSync {
                     Ogcs.Extensions.MessageBox.Show("Unable to check for new version.", "Check Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+
+            Boolean state = !string.IsNullOrEmpty(Settings.Instance.SkipVersion) || !string.IsNullOrEmpty(Settings.Instance.SkipVersion2);
+            Forms.Main.Instance.cbIgnoreSkipPrefs.Visible = state;
+            Forms.Main.Instance.cbIgnoreSkipPrefs.Checked = isManualCheck ? false : state;
         }
 
         public static Boolean IsSquirrelInstall() {
@@ -93,8 +111,8 @@ namespace OutlookGoogleCalendarSync {
             return isSquirrelInstall;
         }
 
-        /// <returns>True if the user has upgraded</returns>
-        private async Task<Boolean> githubCheck() {
+        /// <returns>True if the user has upgraded; False if no upgrade available; Null if opted to not upgrade</returns>
+        private async Task<Boolean?> githubCheck() {
             log.Debug("Checking for Squirrel update...");
             UpdateManager updateManager = null;
             Forms.UpdateInfo updateInfoFrm = null;
@@ -131,27 +149,25 @@ namespace OutlookGoogleCalendarSync {
                     log.Info("Found " + updates.ReleasesToApply.Count() + " newer releases available.");
                     log.Info("Download directory = " + Program.MaskFilePath(updates.PackageDirectory));
 
-                    if (!this.isManualCheck) {
-                        if (updates.CurrentlyInstalledVersion?.Version.Version.Major == 2) {
-                            if (updates.ReleasesToApply.Last().Version.Version.Major == 3) {
-                                System.Collections.Generic.List<ReleaseEntry> releasesToRemove = null;
+                    if (updates.CurrentlyInstalledVersion?.Version.Version.Major == 2) {
+                        if (updates.ReleasesToApply.Last().Version.Version.Major == 3) {
+                            System.Collections.Generic.List<ReleaseEntry> releasesToRemove = null;
 
-                                if ((Settings.Instance.SkipVersion?.StartsWith("3") ?? false) && Settings.Instance.SkipVersion == updates.ReleasesToApply.Last().Version.Version.ToString()) {
-                                    log.Info($"The user has previously requested to skip the latest v3 release.");
-                                    releasesToRemove = updates.ReleasesToApply.Where(r => r.Version.Version.Major == 3).ToList();
-                                    log.Debug($"Identified {releasesToRemove.Count} v3 release(s) to remove and skip.");
-                                    releasesToRemove.Reverse();
-                                    foreach (ReleaseEntry release in releasesToRemove) {
-                                        log.Debug($"Removing release {release.Version.Version.ToString()}");
-                                        updates.ReleasesToApply.Remove(release);
-                                    }
+                            if ((Settings.Instance.SkipVersion?.StartsWith("3") ?? false) && Settings.Instance.SkipVersion == updates.ReleasesToApply.Last().Version.Version.ToString()) {
+                                log.Info($"The user has previously requested to skip the latest v3 release.");
+                                releasesToRemove = updates.ReleasesToApply.Where(r => r.Version.Version.Major == 3).ToList();
+                                log.Debug($"Identified {releasesToRemove.Count} v3 release(s) to remove and skip.");
+                                releasesToRemove.Reverse();
+                                foreach (ReleaseEntry release in releasesToRemove) {
+                                    log.Debug($"Removing release {release.Version.Version.ToString()}");
+                                    updates.ReleasesToApply.Remove(release);
+                                }
 
-                                    if (updates.ReleasesToApply.Count == 0) return false;
-                                }
-                                if (Settings.Instance.SkipVersion2 == updates.ReleasesToApply.Last().Version.Version.ToString()) {
-                                    log.Info("The user has previously requested to skip the latest v2 release.");
-                                    return false;
-                                }
+                                if (updates.ReleasesToApply.Count == 0) return false;
+                            }
+                            if (Settings.Instance.SkipVersion2 == updates.ReleasesToApply.Last().Version.Version.ToString()) {
+                                log.Info("The user has previously requested to skip the latest v2 release.");
+                                return false;
                             }
                         }
                     }
@@ -319,14 +335,8 @@ namespace OutlookGoogleCalendarSync {
                             squirrelGaEv.Send();
                         }
                     }
-
                 } else {
-                    log.Info("Already running the latest version of OGCS.");
-                    if (this.isManualCheck) { //Was a manual check, so give feedback
-                        String beta = "";
-                        if (!Settings.Instance.AlphaReleases && Application.ProductVersion.EndsWith(".0.0")) beta = "beta ";
-                        Ogcs.Extensions.MessageBox.Show($"You are already running the latest {beta}version of OGCS.", "Latest Version", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
+                    return false;
                 }
 
             } catch (ApplicationException) {
@@ -355,7 +365,7 @@ namespace OutlookGoogleCalendarSync {
                 updateInfoFrm?.Dispose();
                 updateManager?.Dispose();
             }
-            return false;
+            return null;
         }
 
         /// <summary>
@@ -587,8 +597,7 @@ namespace OutlookGoogleCalendarSync {
             }
 
             parseRelease(html, ref releaseType, ref releaseURL, ref releaseVersion);
-            if (isManualCheck &&
-                !string.IsNullOrEmpty(releaseVersion) &&
+            if (!string.IsNullOrEmpty(releaseVersion) &&
                 !string.IsNullOrEmpty(Settings.Instance.SkipVersion) &&
                 Program.VersionToInt(releaseVersion) <= Program.VersionToInt(Settings.Instance.SkipVersion)) //
             {
@@ -605,7 +614,7 @@ namespace OutlookGoogleCalendarSync {
                         Program.VersionToInt(releaseVersion) <= Program.VersionToInt(Settings.Instance.SkipVersion2)) //
                     {
                         log.Info("User has also opted to skip v" + releaseVersion);
-                        releaseVersion = null;
+                        releaseVersion = Application.ProductVersion;
                     }
                 }
             }
@@ -659,20 +668,24 @@ namespace OutlookGoogleCalendarSync {
             log.Debug("Finding " + (maxVersion == null ? "" : $"v{maxVersion} ") + "Beta release...");
             Regex rgx = new Regex(@$"\*\*(Beta)\*\*: \[v({maxVersion}[\d\.]+)\]\((.*?)\)", RegexOptions.IgnoreCase);
             MatchCollection release = rgx.Matches(source);
-            if (release.Count > 0) {
-                releaseType = release[0].Result("$1");
-                releaseURL = release[0].Result("$3");
-                releaseVersion = release[0].Result("$2");
+            for (int r = 0; r < release.Count; r++) {
+                releaseType = release[r].Result("$1");
+                releaseURL = release[r].Result("$3");
+                releaseVersion = release[r].Result("$2");
+                break;
             }
 
             if (Settings.Instance.AlphaReleases) {
                 log.Debug("Finding " + (maxVersion == null ? "" : $"v{maxVersion} ") + "Alpha release...");
                 rgx = new Regex(@$"\*\*(Alpha)\*\*: \[v({maxVersion}[\d\.]+)\]\((.*?)\)", RegexOptions.IgnoreCase);
                 release = rgx.Matches(source);
-                if (Program.VersionToInt(release[0].Result("$2")) > Program.VersionToInt(releaseVersion)) {
-                    releaseType = release[0].Result("$1");
-                    releaseURL = release[0].Result("$3");
-                    releaseVersion = release[0].Result("$2");
+                for (int r = 0; r < release.Count; r++) {
+                    if (Program.VersionToInt(release[r].Result("$2")) > Program.VersionToInt(releaseVersion) /*2110600*//*Program.VersionToInt(Application.ProductVersion)*/) {
+                        releaseType = release[r].Result("$1");
+                        releaseURL = release[r].Result("$3");
+                        releaseVersion = release[r].Result("$2");
+                        break;
+                    }
                 }
             }
 

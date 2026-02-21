@@ -319,6 +319,7 @@
             this.dataGridViewTextBoxColumn2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewTextBoxColumn4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.cbIgnoreSkipPrefs = new System.Windows.Forms.CheckBox();
             this.tabApp.SuspendLayout();
             this.tabPage_Sync.SuspendLayout();
             this.consolePanel.SuspendLayout();
@@ -3522,6 +3523,7 @@
             // tabPage_About
             // 
             this.tabPage_About.BackColor = System.Drawing.Color.White;
+            this.tabPage_About.Controls.Add(this.cbIgnoreSkipPrefs);
             this.tabPage_About.Controls.Add(this.lDonateTip);
             this.tabPage_About.Controls.Add(this.dgAbout);
             this.tabPage_About.Controls.Add(this.cbAlphaReleases);
@@ -3544,7 +3546,7 @@
             this.lDonateTip.AutoSize = true;
             this.lDonateTip.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lDonateTip.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.lDonateTip.Location = new System.Drawing.Point(154, 406);
+            this.lDonateTip.Location = new System.Drawing.Point(154, 396);
             this.lDonateTip.Name = "lDonateTip";
             this.lDonateTip.Size = new System.Drawing.Size(177, 13);
             this.lDonateTip.TabIndex = 46;
@@ -3594,7 +3596,7 @@
             // 
             this.cbAlphaReleases.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.cbAlphaReleases.AutoSize = true;
-            this.cbAlphaReleases.Location = new System.Drawing.Point(170, 470);
+            this.cbAlphaReleases.Location = new System.Drawing.Point(170, 466);
             this.cbAlphaReleases.Name = "cbAlphaReleases";
             this.cbAlphaReleases.Size = new System.Drawing.Size(144, 17);
             this.cbAlphaReleases.TabIndex = 40;
@@ -3606,7 +3608,7 @@
             // 
             this.btCheckForUpdate.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.btCheckForUpdate.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.btCheckForUpdate.Location = new System.Drawing.Point(186, 441);
+            this.btCheckForUpdate.Location = new System.Drawing.Point(186, 437);
             this.btCheckForUpdate.Name = "btCheckForUpdate";
             this.btCheckForUpdate.Size = new System.Drawing.Size(113, 23);
             this.btCheckForUpdate.TabIndex = 39;
@@ -3630,7 +3632,7 @@
             // lAboutURL
             // 
             this.lAboutURL.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.lAboutURL.Location = new System.Drawing.Point(5, 517);
+            this.lAboutURL.Location = new System.Drawing.Point(5, 523);
             this.lAboutURL.Name = "lAboutURL";
             this.lAboutURL.Size = new System.Drawing.Size(475, 23);
             this.lAboutURL.TabIndex = 2;
@@ -3667,7 +3669,7 @@
             this.pbDonate.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.pbDonate.Cursor = System.Windows.Forms.Cursors.Hand;
             this.pbDonate.Image = global::OutlookGoogleCalendarSync.Properties.Resources.paypalDonate;
-            this.pbDonate.Location = new System.Drawing.Point(205, 380);
+            this.pbDonate.Location = new System.Drawing.Point(205, 370);
             this.pbDonate.Name = "pbDonate";
             this.pbDonate.Size = new System.Drawing.Size(75, 23);
             this.pbDonate.TabIndex = 3;
@@ -3964,6 +3966,19 @@
             this.dataGridViewTextBoxColumn4.HeaderText = "AboutValue";
             this.dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
             this.dataGridViewTextBoxColumn4.ReadOnly = true;
+            // 
+            // cbIgnoreSkipPrefs
+            // 
+            this.cbIgnoreSkipPrefs.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.cbIgnoreSkipPrefs.AutoSize = true;
+            this.cbIgnoreSkipPrefs.Checked = true;
+            this.cbIgnoreSkipPrefs.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbIgnoreSkipPrefs.Location = new System.Drawing.Point(143, 485);
+            this.cbIgnoreSkipPrefs.Name = "cbIgnoreSkipPrefs";
+            this.cbIgnoreSkipPrefs.Size = new System.Drawing.Size(199, 17);
+            this.cbIgnoreSkipPrefs.TabIndex = 47;
+            this.cbIgnoreSkipPrefs.Text = "Consider versions previously skipped";
+            this.cbIgnoreSkipPrefs.UseVisualStyleBackColor = true;
             // 
             // Main
             // 
@@ -4335,5 +4350,6 @@
         private System.Windows.Forms.Label label36;
         private System.Windows.Forms.Label label42;
         private System.Windows.Forms.Button btRevokeGCal;
+        public System.Windows.Forms.CheckBox cbIgnoreSkipPrefs;
     }
 }
