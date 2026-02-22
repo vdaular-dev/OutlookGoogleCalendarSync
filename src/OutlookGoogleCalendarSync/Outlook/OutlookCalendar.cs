@@ -432,7 +432,11 @@ namespace OutlookGoogleCalendarSync.Outlook {
             Recurrence.BuildOutlookPattern(ev, ai);
 
             ai.Subject = Obfuscate.ApplyRegex(Obfuscate.Property.Subject, ev.Summary, null, Sync.Direction.GoogleToOutlook);
-            if (profile.AddDescription && ev.Description != null) ai.Body = Obfuscate.ApplyRegex(Obfuscate.Property.Description, ev.Description, null, Sync.Direction.GoogleToOutlook);
+
+            //Double encode any &amp within an href tag, to counteract Outlook being "helpful" and converting it
+            String evDescription = Regex.Replace(ev.Description ?? "", @"href=\""(.*?)\""", m => { return m.Value.Replace("&amp;", "&amp;amp;"); });
+            if (profile.AddDescription && ev.Description != null) ai.Body = Obfuscate.ApplyRegex(Obfuscate.Property.Description, evDescription, null, Sync.Direction.GoogleToOutlook);
+
             if (profile.AddLocation) ai.Location = Obfuscate.ApplyRegex(Obfuscate.Property.Location, ev.Location, null, Sync.Direction.GoogleToOutlook);
             ai.Sensitivity = getPrivacy(ev.Visibility, null);
             ai.BusyStatus = getAvailability(ev.Transparency, null);
@@ -694,11 +698,14 @@ namespace OutlookGoogleCalendarSync.Outlook {
                         String evBodyForCompare = bodyObfuscated;
                         switch (ai.BodyFormat()) {
                             case OlBodyFormat.olFormatHTML:
-                                evBodyForCompare = Regex.Replace(bodyObfuscated, "[\n]+", " "); break;
+                                evBodyForCompare = Regex.Replace(bodyObfuscated, @"((\r)*\n)+", " ").Trim(); 
+                                //Double encode any &amp within an href tag, to counteract Outlook being "helpful" and converting it
+                                bodyObfuscated = Regex.Replace(bodyObfuscated ?? "", @"href=\""(.*?)\""", m => { return m.Value.Replace("&amp;", "&amp;amp;"); });
+                                break;
                             case OlBodyFormat.olFormatRichText:
-                                evBodyForCompare = Regex.Replace(bodyObfuscated, "[\n]", ""); break;
+                                evBodyForCompare = Regex.Replace(bodyObfuscated, @"((\r)*\n)+", " ").Trim(); break;
                             case OlBodyFormat.olFormatPlain:
-                                evBodyForCompare = Regex.Replace(bodyObfuscated, "[\n]", ""); break;
+                                evBodyForCompare = Regex.Replace(bodyObfuscated, @"((\r)*\n)+", " ").Trim(); break;
                         }
                         if (descriptionChanged = Sync.Engine.CompareAttribute("Description", Sync.Direction.GoogleToOutlook, evBodyForCompare, aiBody, sb, ref itemModified))
                             ai.Body = bodyObfuscated;
