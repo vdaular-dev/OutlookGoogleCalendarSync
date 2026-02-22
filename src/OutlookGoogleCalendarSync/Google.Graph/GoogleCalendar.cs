@@ -573,7 +573,7 @@ namespace OutlookGoogleCalendarSync.Google.Graph {
                 } catch (System.ArgumentException ex) {
                     if (ex.Message.Contains("Time zone with ID tzone://Microsoft/Custom not found")) {
                         log.Debug(Newtonsoft.Json.JsonConvert.SerializeObject(ai));
-                        ex.Analyse("Issue #2148");
+                        throw new AggregateException("Please see <a href='https://github.com/phw198/OutlookGoogleCalendarSync/issues/2148'>Issue #2148</a> for further details.", ex);
                     }
                     throw;
                 }
@@ -586,7 +586,7 @@ namespace OutlookGoogleCalendarSync.Google.Graph {
                 } catch (System.ArgumentException ex) {
                     if (ex.Message.Contains("Time zone with ID tzone://Microsoft/Custom not found")) {
                         log.Debug(Newtonsoft.Json.JsonConvert.SerializeObject(ai));
-                        ex.Analyse("Issue #2148");
+                        throw new AggregateException("Please see <a href='https://github.com/phw198/OutlookGoogleCalendarSync/issues/2148'>Issue #2148</a> for further details.", ex);
                     }
                     throw;
                 }
