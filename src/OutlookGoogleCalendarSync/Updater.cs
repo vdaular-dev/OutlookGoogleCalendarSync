@@ -46,7 +46,7 @@ namespace OutlookGoogleCalendarSync {
             try {
                 if (Program.VersionToInt(Application.ProductVersion) >= 4000001) {
                     devBuildChecker();
-                
+
                 } else if (!string.IsNullOrEmpty(nonGitHubReleaseUri) || Program.IsInstalled) {
                     try {
                         Boolean? updating = await githubCheck();
@@ -81,7 +81,7 @@ namespace OutlookGoogleCalendarSync {
 
             } catch (BadImageFormatException ex) {
                 Ogcs.Extensions.MessageBox.Show(ex.Message, "Upgrade Failed", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                
+
             } catch (System.Exception ex) {
                 log.Fail("Failure checking for update. " + ex.Message);
                 if (isManualCheck) {
@@ -89,9 +89,11 @@ namespace OutlookGoogleCalendarSync {
                 }
             }
 
-            Boolean state = !string.IsNullOrEmpty(Settings.Instance.SkipVersion) || !string.IsNullOrEmpty(Settings.Instance.SkipVersion2);
-            Forms.Main.Instance.cbIgnoreSkipPrefs.Visible = state;
-            Forms.Main.Instance.cbIgnoreSkipPrefs.Checked = isManualCheck ? false : state;
+            if (isManualCheck) {
+                Boolean state = !string.IsNullOrEmpty(Settings.Instance.SkipVersion) || !string.IsNullOrEmpty(Settings.Instance.SkipVersion2);
+                Forms.Main.Instance.cbIgnoreSkipPrefs.Visible = state;
+                Forms.Main.Instance.cbIgnoreSkipPrefs.Checked = isManualCheck ? false : state;
+            }
         }
 
         public static Boolean IsSquirrelInstall() {
