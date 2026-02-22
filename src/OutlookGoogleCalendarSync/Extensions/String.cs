@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 
 namespace OutlookGoogleCalendarSync.Extensions {
     public static class OgcsString {
@@ -11,11 +12,11 @@ namespace OutlookGoogleCalendarSync.Extensions {
         }
 
         public static String RemoveLineBreaks(this String input) {
-            return input?.Replace("\r", "").Replace("\n", "");
+            return Regex.Replace(input, @"((\r)*\n)+", " ");
         }
 
         public static String RemoveNBSP(this String input) {
-            return System.Text.RegularExpressions.Regex.Replace(input ?? "", @"[\u00A0]", " ");
+            return Regex.Replace(input ?? "", @"[\u00A0]", " ");
         }
 
         public static String ToBase64String(this String input) {

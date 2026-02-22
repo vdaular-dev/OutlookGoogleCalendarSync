@@ -984,7 +984,7 @@ namespace OutlookGoogleCalendarSync.Google {
                         outlookBody = outlookBody.Substring(0, 8 * 1024);
                     }
                     String bodyObfuscated = Obfuscate.ApplyRegex(Obfuscate.Property.Description, outlookBody, ev.Description, Sync.Direction.OutlookToGoogle);
-                    if (Sync.Engine.CompareAttribute("Description", Sync.Direction.OutlookToGoogle, ev.Description, bodyObfuscated, sb, ref itemModified))
+                    if (Sync.Engine.CompareAttribute("Description", Sync.Direction.OutlookToGoogle, ev.Description?.RemoveLineBreaks().Trim(), bodyObfuscated.RemoveLineBreaks().Trim(), sb, ref itemModified))
                         ev.Description = bodyObfuscated;
 
                     if (profile.AddGMeet) {
