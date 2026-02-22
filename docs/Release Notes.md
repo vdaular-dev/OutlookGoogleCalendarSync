@@ -1,6 +1,29 @@
 | Release Notes |
 |:---|
 
+# v3.0.1.0 - Alpha
+
+**Enhancements**
+- Application
+    - No Outlook client required!
+    - Display any news on start up
+    - Better presentation on 4k high resolution displays [[#2245](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2245)]
+- Sync Engine
+    - Don't delete newly created Outlook items during 2-way sync  [[#2268](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2268)]
+    - Don't sync attendee changes to Google mastered Event organised by another [[#2264](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2264)]
+    - Improvements for 2-way overrides (privacy, availability, colours) [[#2003](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2003)]
+
+**Bugfix**
+- Application
+    - Prevent making installed application portable, when importing settings.
+    - Stop upgrade notifications when the same as running version [[#2276](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2276)]
+    - Fix failed updates, when current install 'corrupted' [[#2272](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2272)]
+- Sync Engine
+    - Handle no valid RRULE in recurring Google series. [[#2284](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2284)]
+    - Fix incorrect syncing when copying an Outlook appointment [[#2091](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2091)]
+    - Fatal crash for scheduled sync when no system tray OGCS icon. [[#2270](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2270)]
+    - Stop Outlook breaking encoded HTML in Google descriptions. [[#2269](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2269)]
+
 # v2.12.0.0 - Beta
 
 **Enhancements** rolled in from Alpha releases

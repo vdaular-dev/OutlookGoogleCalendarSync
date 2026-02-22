@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>OutlookGoogleCalendarSync</id>
-    <version>2.12.0-beta</version>
+    <version>3.0.1-alpha</version>
     <title>Outlook Google Calendar Sync</title>
     <authors>Paul Woolcock</authors>
     <owners>phw198</owners>
@@ -12,49 +12,50 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Sync Outlook and Google calendars.</description>
     <releaseNotes>
-# What's New In v2.12.0?
+### &lt;i class="em em-loudspeaker"&gt;&lt;/i&gt; Major new release: supports Outlook Online!
 
-&lt;i class="em em-high_brightness"&gt;&lt;/i&gt; **Enhancements** rolled in from Alpha releases  
+* v3 no longer requires an Outlook client (either _Classic_ or _New_ editions)
+* New features will only appear in v3, though you may choose to remain on v2.
+* v2 of OGCS has entered [corrective maintenance](https://www.outlookgooglecalendarsync.com/blog/2026/02/22/v2-into-corrective-maintenance.html) mode.
+
+# What's New In v3.0.1?
+
+&lt;i class="em em-high_brightness"&gt;&lt;/i&gt; **Enhancements**  
 
 - Application
-    - Better detection of system wake from sleep [[#2132](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2132)]
-    - Include updated series exceptions in sync summary count
-    - Added "Revoke" button for Google permissions
-    - Update of third-party DLL files
-        - Now requires .NET Framework 4.6.2
-    - Include calendar name in deletion dialogue box [[#2098](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2098)]
-    - Handle insufficient Google calendar permissions better [[#1937](https://github.com/phw198/OutlookGoogleCalendarSync/issues/1937)]
-    - Open default system browser for OGCS links
-    - Remember choice to skip release upgrade [[#1951](https://github.com/phw198/OutlookGoogleCalendarSync/issues/1951)]
-    - Cleaner startup when no classic Outlook client present
+    - No Outlook client required!
+    - Display any news on start up
+    - Better presentation on 4k high resolution displays [[#2245](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2245)]
 - Sync Engine
-    - Workaround for Google bug that surfaced on 23-May with symptoms:
-        - New Outlook appointment from "ghost" Google event fails to save [[#2123](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2123)]
-        - Repeated failure to delete "ghost" Google event(s) [[#2124](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2124)]
-    - Improved monthly recurrence on day >28th
-    - Improved warning messages when colours/categories excluded [[#1989](https://github.com/phw198/OutlookGoogleCalendarSync/issues/1989)]
-        - Improved two-way sync behaviour when deletion prompt declined [[#1989](https://github.com/phw198/OutlookGoogleCalendarSync/issues/1989)]
-    - Show "mass deletion" warning regardless of deletion prompt setting [[#2137](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2137)]
-    - Sync summary counts no longer include failed items [[#2150](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2150)]
-    - Optimised retrieval of Google recurring series and its instances [[#2034](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2034)]
-    - Optimise exclusion of Outlook categories [[#1929](https://github.com/phw198/OutlookGoogleCalendarSync/issues/1929)]
+    - Don't delete newly created Outlook items during 2-way sync  [[#2268](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2268)]
+    - Don't sync attendee changes to Google mastered Event organised by another [[#2264](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2264)]
+    - Improvements for 2-way overrides (privacy, availability, colours) [[#2003](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2003)]
 
 &lt;i class="em em-beetle"&gt;&lt;/i&gt; **Bugfix**  
 
-- See [release notes](https://www.outlookgooglecalendarsync.com/release-notes) for full list
+- Application
+    - Prevent making installed application portable, when importing settings.
+    - Stop upgrade notifications when the same as running version [[#2276](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2276)]
+    - Fix failed updates, when current install 'corrupted' [[#2272](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2272)]
+
+- Sync Engine
+    - Handle no valid RRULE in recurring Google series. [[#2284](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2284)]
+    - Fix incorrect syncing when copying an Outlook appointment [[#2091](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2091)]
+    - Fatal crash for scheduled sync when no system tray OGCS icon. [[#2270](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2270)]
+    - Stop Outlook breaking encoded HTML in Google descriptions. [[#2269](https://github.com/phw198/OutlookGoogleCalendarSync/issues/2269)]
     </releaseNotes>
     <copyright>Copyright 2026</copyright>
     <tags>Outlook Google Calendar Sync 2-way Two-way Bidirection</tags>
   </metadata>
   <files>
-    <!--<file src="bin\Release\*.*" target="lib\net45\" />-->
-        <file src="bin\Release\OutlookGoogleCalendarSync.e*" target="lib\net45\" />
-        <file src="bin\Release\OutlookGoogleCalendarSync.pdb" target="lib\net45\" />
-        <file src="bin\Release\*.dll" target="lib\net45\" />
-        <file src="bin\Release\ErrorReportingTemplate.json" target="lib\net45\" />
-        <file src="bin\Release\logger.xml" target="lib\net45\" />
-        <file src="bin\Release\tzdb.nzd" target="lib\net45\" />
-        <file src="bin\Release\Console\*.*" target="lib\net45\Console\" />
-        <file src="bin\Release\Console\emoji\*.*" target="lib\net45\Console\emoji\" />
+    <!--<file src="bin\Release-v3\*.*" target="lib\net45\" />-->
+        <file src="bin\Release-v3\OutlookGoogleCalendarSync.e*" target="lib\net45\" />
+        <file src="bin\Release-v3\OutlookGoogleCalendarSync.pdb" target="lib\net45\" />
+        <file src="bin\Release-v3\*.dll" target="lib\net45\" />
+        <file src="bin\Release-v3\ErrorReportingTemplate.json" target="lib\net45\" />
+        <file src="bin\Release-v3\logger.xml" target="lib\net45\" />
+        <file src="bin\Release-v3\tzdb.nzd" target="lib\net45\" />
+        <file src="bin\Release-v3\Console\*.*" target="lib\net45\Console\" />
+        <file src="bin\Release-v3\Console\emoji\*.*" target="lib\net45\Console\emoji\" />
   </files>
 </package>
