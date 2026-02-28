@@ -402,6 +402,7 @@ namespace OutlookGoogleCalendarSync.Google {
             //When a series is changed for "this and future events", the future events form a new series that starts from the first changed occurrence "<guid>_yyyyMMddThhmmss"
             //However, even if it finished before the sync window, Google still returns the original recurring series "<guid>"
             List<Event> historicRecurring = new();
+            if (result.Count > 0) log.Fine("Checking for recurrences that end before the synced date range.");
             foreach (Event ev in result) {
                 if ((ev.Recurrence?.Count() ?? 0) == 0) continue;
                 Dictionary<String, String> rules = Recurrence.ExplodeRrule(ev.Recurrence);
@@ -1868,7 +1869,7 @@ namespace OutlookGoogleCalendarSync.Google {
                     log.Fine("Get the timezone offset - convert from IANA string to UTC offset integer.");
                     Setting setting = Service.Settings.Get("timezone").Execute();
                     this.UTCoffset = TimezoneDB.GetUtcOffset(setting.Value);
-                    log.Info("Google account timezone: " + setting.Value);
+                    log.Info($"Google account timezone: {setting.Value} with minute offset {this.UTCoffset}.");
                     stage = "retrieve settings for synced Google calendar";
                     getCalendarSettings();
                     break;
