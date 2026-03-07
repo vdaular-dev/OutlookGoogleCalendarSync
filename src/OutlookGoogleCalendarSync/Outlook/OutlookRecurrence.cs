@@ -229,7 +229,7 @@ namespace OutlookGoogleCalendarSync.Outlook {
                     } else {
                         ex.Analyse("Error when determining if Outlook recurrence on " + originalDate + " is deleted or not.");
                     }
-                } catch (System.Exception ex2) { #2281
+                } catch (System.Exception ex2) { // #2281
                     throw new System.AccessViolationException("Unable to even access the originalDate attribute for this recurrence.", ex2.LogAsFail());
                 } finally {
                     Calendar.ForceClientReconnect = true;
